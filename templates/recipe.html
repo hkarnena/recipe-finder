@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe Details</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        {% if recipe %}
+            <div class="recipe-detail">
+                <h1>{{ recipe.strMeal }}</h1>
+                <img src="{{ recipe.strMealThumb }}" alt="{{ recipe.strMeal }}" class="recipe-image">
+                
+                <div class="recipe-info">
+                    <p><strong>Category:</strong> {{ recipe.strCategory }}</p>
+                    <p><strong>Cuisine:</strong> {{ recipe.strArea }}</p>
+                </div>
+
+                <h2>Ingredients</h2>
+                <ul class="ingredients-list">
+                    {% for i in range(1, 21) %}
+                        {% set ingredient = recipe['strIngredient' ~ i] %}
+                        {% set measure = recipe['strMeasure' ~ i] %}
+                        {% if ingredient and ingredient.strip() %}
+                            <li>{{ measure }} {{ ingredient }}</li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+
+                <h2>Instructions</h2>
+                <p class="instructions">{{ recipe.strInstructions }}</p>
+
+                {% if recipe.strYoutube %}
+                <p><a href="{{ recipe.strYoutube }}" target="_blank" class="btn-youtube">Watch Video Tutorial</a></p>
+                {% endif %}
+            </div>
+        {% else %}
+            <p class="no-results">Recipe not found!</p>
+        {% endif %}
+        
+        <a href="/" class="btn-back">← Back to Search</a>
+    </div>
+</body>
+</html>

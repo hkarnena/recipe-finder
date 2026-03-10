@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe Finder</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🍳 Recipe Finder</h1>
+        <p class="subtitle">Find delicious recipes by ingredient</p>
+        <form action="/search" method="post" class="search-form">
+            <input type="text" name="ingredient" placeholder="Enter ingredient (e.g., chicken, pasta)" required>
+            <button type="submit">Search Recipes</button>
+        </form>
+    </div>
+</body>
+</html>
