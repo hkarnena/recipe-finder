@@ -11,7 +11,13 @@
     <div class="container">
         {% if recipe %}
             <div class="recipe-detail">
-                <h1>{{ recipe.strMeal }}</h1>
+                <div class="recipe-header">
+                    <h1>{{ recipe.strMeal }}</h1>
+                    <button class="favorite-btn-large" onclick="toggleFavorite('{{ recipe.idMeal }}', '{{ recipe.strMeal }}', '{{ recipe.strMealThumb }}')" aria-label="Add to favorites">
+                        <span class="heart" id="heart-{{ recipe.idMeal }}">♡</span>
+                        <span class="favorite-text">Save Recipe</span>
+                    </button>
+                </div>
                 <img src="{{ recipe.strMealThumb }}" alt="{{ recipe.strMeal }}" class="recipe-image" loading="lazy">
                 
                 <div class="recipe-info">
@@ -48,7 +54,26 @@
         <div class="action-buttons">
             <a href="/" class="btn-back">← Back to Search</a>
             <a href="/random" class="btn-random-small">🎲 Random Recipe</a>
+            <a href="#" onclick="showFavorites(); return false;" class="btn-favorites">❤️ My Favorites (<span id="favCount">0</span>)</a>
         </div>
     </div>
+    
+    <!-- Favorites Modal -->
+    <div id="favoritesModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeFavorites()">&times;</span>
+            <h2>My Favorite Recipes</h2>
+            <div id="favoritesList" class="recipe-grid"></div>
+        </div>
+    </div>
+    
+    <script src="/static/script.js"></script>
+    <script>
+        // Initialize favorites on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateFavoriteButtons();
+            updateFavoriteCount();
+        });
+    </script>
 </body>
 </html>

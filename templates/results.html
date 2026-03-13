@@ -19,6 +19,9 @@
             <div class="recipe-grid">
             {% for recipe in recipes %}
                 <div class="recipe-card">
+                    <button class="favorite-btn" onclick="toggleFavorite('{{ recipe.idMeal }}', '{{ recipe.strMeal }}', '{{ recipe.strMealThumb }}')" aria-label="Add to favorites">
+                        <span class="heart" id="heart-{{ recipe.idMeal }}">♡</span>
+                    </button>
                     <img src="{{ recipe.strMealThumb }}" alt="{{ recipe.strMeal }}" loading="lazy">
                     <h3>{{ recipe.strMeal }}</h3>
                     <a href="/recipe/{{ recipe.idMeal }}" class="btn-view">View Recipe</a>
@@ -42,9 +45,26 @@
         <div class="action-buttons">
             <a href="/" class="btn-back">← Search Again</a>
             <a href="/random" class="btn-random-small">🎲 Random Recipe</a>
+            <a href="#" onclick="showFavorites(); return false;" class="btn-favorites">❤️ My Favorites (<span id="favCount">0</span>)</a>
+        </div>
+    </div>
+    
+    <!-- Favorites Modal -->
+    <div id="favoritesModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeFavorites()">&times;</span>
+            <h2>My Favorite Recipes</h2>
+            <div id="favoritesList" class="recipe-grid"></div>
         </div>
     </div>
     
     <script src="/static/script.js"></script>
+    <script>
+        // Initialize favorites on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateFavoriteButtons();
+            updateFavoriteCount();
+        });
+    </script>
 </body>
 </html>

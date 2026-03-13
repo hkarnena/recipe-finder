@@ -8,28 +8,83 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <div class="container">
-        <img src="/static/logo.svg" alt="Recipe Finder Logo" class="logo">
-        <h1>Recipe Finder</h1>
-        <p class="subtitle">Discover delicious recipes from around the world</p>
-        
-        <form action="/search" method="post" class="search-form" id="searchForm">
-            <input type="text" name="ingredient" id="ingredientInput" placeholder="Enter ingredient (e.g., chicken, pasta)" required>
-            <button type="submit" id="searchBtn">Search Recipes</button>
-        </form>
-        
-        <div class="divider">OR</div>
-        
-        <a href="/random" class="btn-random">🎲 Surprise Me with a Random Recipe</a>
-        
-        <div class="popular-searches">
-            <p>Popular searches:</p>
-            <div class="tags">
-                <button class="tag" onclick="searchIngredient('chicken')">Chicken</button>
-                <button class="tag" onclick="searchIngredient('pasta')">Pasta</button>
-                <button class="tag" onclick="searchIngredient('beef')">Beef</button>
-                <button class="tag" onclick="searchIngredient('salmon')">Salmon</button>
-                <button class="tag" onclick="searchIngredient('potato')">Potato</button>
+    <!-- Top Navigation Dashboard -->
+    <nav class="top-nav">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">
+                <img src="/static/logo.svg" alt="Recipe Finder" class="nav-logo-img">
+                <span>Recipe Finder</span>
+            </a>
+            <div class="nav-links">
+                <a href="/" class="nav-link">🏠 Home</a>
+                <a href="/random" class="nav-link">🎲 Random</a>
+                <a href="#" onclick="showFavorites(); return false;" class="nav-link">
+                    ❤️ Favorites <span class="badge-count" id="favCount">0</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="hero-content">
+            <img src="/static/logo.svg" alt="Recipe Finder Logo" class="hero-logo">
+            <h1 class="hero-title">Recipe Finder</h1>
+            <p class="hero-subtitle">Discover delicious recipes from around the world</p>
+            
+            <form action="/search" method="post" class="hero-search-form" id="searchForm">
+                <div class="search-wrapper">
+                    <input type="text" name="ingredient" id="ingredientInput" placeholder="Enter ingredient (e.g., chicken, pasta)" required>
+                    <button type="submit" id="searchBtn">Search Recipes</button>
+                </div>
+            </form>
+            
+            <div class="hero-divider">OR</div>
+            
+            <a href="/random" class="hero-random-btn">🎲 Surprise Me with a Random Recipe</a>
+            
+            <div class="popular-tags">
+                <p>Popular searches:</p>
+                <div class="tags-wrapper">
+                    <button class="tag" onclick="searchIngredient('chicken')">Chicken</button>
+                    <button class="tag" onclick="searchIngredient('pasta')">Pasta</button>
+                    <button class="tag" onclick="searchIngredient('beef')">Beef</button>
+                    <button class="tag" onclick="searchIngredient('salmon')">Salmon</button>
+                    <button class="tag" onclick="searchIngredient('potato')">Potato</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Categories Section -->
+    <div class="categories-wrapper">
+        <div class="categories-container">
+            <h2 class="section-title">Browse by Category</h2>
+            <div class="category-grid">
+                <a href="/category/Breakfast" class="category-card">
+                    <span class="category-icon">🍳</span>
+                    <span class="category-name">Breakfast</span>
+                </a>
+                <a href="/category/Dessert" class="category-card">
+                    <span class="category-icon">🍰</span>
+                    <span class="category-name">Dessert</span>
+                </a>
+                <a href="/category/Vegetarian" class="category-card">
+                    <span class="category-icon">🥗</span>
+                    <span class="category-name">Vegetarian</span>
+                </a>
+                <a href="/category/Seafood" class="category-card">
+                    <span class="category-icon">🦐</span>
+                    <span class="category-name">Seafood</span>
+                </a>
+                <a href="/category/Pasta" class="category-card">
+                    <span class="category-icon">🍝</span>
+                    <span class="category-name">Pasta</span>
+                </a>
+                <a href="/category/Chicken" class="category-card">
+                    <span class="category-icon">🍗</span>
+                    <span class="category-name">Chicken</span>
+                </a>
             </div>
         </div>
     </div>
@@ -37,6 +92,15 @@
     <div id="loadingSpinner" class="loading-overlay" style="display: none;">
         <div class="spinner"></div>
         <p>Finding delicious recipes...</p>
+    </div>
+    
+    <!-- Favorites Modal -->
+    <div id="favoritesModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeFavorites()">&times;</span>
+            <h2>My Favorite Recipes</h2>
+            <div id="favoritesList" class="recipe-grid"></div>
+        </div>
     </div>
     
     <script src="/static/script.js"></script>
