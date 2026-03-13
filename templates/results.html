@@ -9,7 +9,8 @@
 </head>
 <body>
     <div class="container">
-        <h1>🍳 Recipe Results</h1>
+        <img src="/static/logo.svg" alt="Recipe Finder Logo" class="logo" style="width: 80px; height: 80px;">
+        <h1>Recipe Results</h1>
         {% if ingredient %}
         <p class="subtitle">Found {{ recipes|length if recipes else 0 }} recipes with "{{ ingredient }}"</p>
         {% endif %}
