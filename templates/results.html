@@ -8,12 +8,33 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <div class="container">
-        <img src="/static/logo.svg" alt="Recipe Finder Logo" class="logo" style="width: 80px; height: 80px;">
-        <h1>Recipe Results</h1>
-        {% if ingredient %}
-        <p class="subtitle">Found {{ recipes|length if recipes else 0 }} recipes with "{{ ingredient }}"</p>
-        {% endif %}
+    <!-- Top Navigation Dashboard -->
+    <nav class="top-nav">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">
+                <img src="/static/logo.svg" alt="Recipe Finder" class="nav-logo-img">
+                <span>Recipe Finder</span>
+            </a>
+            <div class="nav-links">
+                <a href="/" class="nav-link">🏠 Home</a>
+                <a href="/random" class="nav-link">🎲 Random</a>
+                <a href="#" onclick="showFavorites(); return false;" class="nav-link">
+                    ❤️ Favorites <span class="badge-count" id="favCount">0</span>
+                </a>
+                <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode">
+                    <span class="theme-icon">🌙</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="results-container">
+        <div class="results-header">
+            <h1>Recipe Results</h1>
+            {% if ingredient %}
+            <p>Found {{ recipes|length if recipes else 0 }} recipes with "{{ ingredient }}"</p>
+            {% endif %}
+        </div>
         
         {% if recipes %}
             <div class="recipe-grid">
@@ -60,7 +81,6 @@
     
     <script src="/static/script.js"></script>
     <script>
-        // Initialize favorites on page load
         document.addEventListener('DOMContentLoaded', function() {
             updateFavoriteButtons();
             updateFavoriteCount();

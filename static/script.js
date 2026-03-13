@@ -141,4 +141,120 @@ function showNotification(message, type) {
     }, 2000);
 }
 
+// Dark Mode Toggle
+function toggleTheme() {
+    const body = document.body;
+    const themeIcon = document.querySelector('.theme-icon');
+    
+    body.classList.toggle('dark-mode');
+    
+    if (body.classList.contains('dark-mode')) {
+        themeIcon.textContent = '☀️';
+        localStorage.setItem('theme', 'dark');
+    } else {
+        themeIcon.textContent = '🌙';
+        localStorage.setItem('theme', 'light');
+    }
+}
+
+// Load saved theme on page load
+function loadTheme() {
+    const savedTheme = localStorage.getItem('theme');
+    const themeIcon = document.querySelector('.theme-icon');
+    
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+        if (themeIcon) themeIcon.textContent = '☀️';
+    }
+}
+
+// Print Recipe
+function printRecipe() {
+    window.print();
+}
+
+// Share Recipe
+function shareRecipe(recipeName, recipeId) {
+    const url = window.location.origin + '/recipe/' + recipeId;
+    const text = `Check out this amazing recipe: ${recipeName}`;
+    
+    // Check if Web Share API is available
+    if (navigator.share) {
+        navigator.share({
+            title: recipeName,
+            text: text,
+            url: url
+        }).catch(err => console.log('Error sharing:', err));
+    } else {
+        // Fallback: Show custom share modal
+        showShareModal(recipeName, url, text);
+    }
+}
+
+function showShareModal(recipeName, url, text) {
+    // Create modal if it doesn't exist
+    let modal = document.getElementById('shareModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'shareModal';
+        modal.className = 'share-modal';
+        modal.innerHTML = `
+            <div class="share-modal-content">
+                <span class="close" onclick="closeShareModal()">&times;</span>
+                <h3>Share Recipe</h3>
+                <div class="share-buttons">
+                    <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}" 
+                       target="_blank" class="share-btn share-btn-twitter">
+                        <span class="share-btn-icon">🐦</span>
+                        Share on Twitter
+                    </a>
+                    <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}" 
+                       target="_blank" class="share-btn share-btn-facebook">
+                        <span class="share-btn-icon">📘</span>
+                        Share on Facebook
+                    </a>
+                    <a href="https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}" 
+                       target="_blank" class="share-btn share-btn-whatsapp">
+                        <span class="share-btn-icon">💬</span>
+                        Share on WhatsApp
+                    </a>
+                    <button onclick="copyToClipboard('${url}')" class="share-btn share-btn-copy">
+                        <span class="share-btn-icon">📋</span>
+                        Copy Link
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    modal.style.display = 'block';
+}
+
+function closeShareModal() {
+    const modal = document.getElementById('shareModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        showNotification('Link copied to clipboard!', 'add');
+        closeShareModal();
+    }).catch(err => {
+        console.error('Failed to copy:', err);
+    });
+}
+
+// Close share modal when clicking outside
+window.addEventListener('click', function(event) {
+    const modal = document.getElementById('shareModal');
+    if (event.target == modal) {
+        closeShareModal();
+    }
+});
+
+// Initialize theme on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadTheme();
+});
+
 console.log('Recipe Finder loaded!');

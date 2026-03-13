@@ -8,7 +8,27 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <div class="container">
+    <!-- Top Navigation Dashboard -->
+    <nav class="top-nav">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">
+                <img src="/static/logo.svg" alt="Recipe Finder" class="nav-logo-img">
+                <span>Recipe Finder</span>
+            </a>
+            <div class="nav-links">
+                <a href="/" class="nav-link">🏠 Home</a>
+                <a href="/random" class="nav-link">🎲 Random</a>
+                <a href="#" onclick="showFavorites(); return false;" class="nav-link">
+                    ❤️ Favorites <span class="badge-count" id="favCount">0</span>
+                </a>
+                <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode">
+                    <span class="theme-icon">🌙</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="results-container">
         {% if recipe %}
             <div class="recipe-detail">
                 <div class="recipe-header">
@@ -42,6 +62,11 @@
                 {% if recipe.strYoutube %}
                 <a href="{{ recipe.strYoutube }}" target="_blank" rel="noopener noreferrer" class="btn-youtube">📺 Watch Video Tutorial</a>
                 {% endif %}
+                
+                <div class="recipe-actions">
+                    <button onclick="printRecipe()" class="btn-print">🖨️ Print Recipe</button>
+                    <button onclick="shareRecipe('{{ recipe.strMeal }}', '{{ recipe.idMeal }}')" class="btn-share">📤 Share Recipe</button>
+                </div>
             </div>
         {% else %}
             <div class="error-message">
@@ -69,7 +94,6 @@
     
     <script src="/static/script.js"></script>
     <script>
-        // Initialize favorites on page load
         document.addEventListener('DOMContentLoaded', function() {
             updateFavoriteButtons();
             updateFavoriteCount();
