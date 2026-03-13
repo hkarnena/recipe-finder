@@ -37,3 +37,19 @@ def recipe_detail(request: Request, recipe_id: str):
     except Exception as e:
         recipe = None
     return templates.TemplateResponse("recipe.html", {"request": request, "recipe": recipe})
+
+# Random recipe
+@app.get("/random", response_class=HTMLResponse)
+def random_recipe(request: Request):
+    api_url = "https://www.themealdb.com/api/json/v1/1/random.php"
+    try:
+        response = requests.get(api_url, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        recipe = data.get("meals", [None])[0]
+        if recipe:
+            recipe_id = recipe.get("idMeal")
+            return templates.TemplateResponse("recipe.html", {"request": request, "recipe": recipe})
+    except Exception as e:
+        pass
+    return templates.TemplateResponse("recipe.html", {"request": request, "recipe": None})

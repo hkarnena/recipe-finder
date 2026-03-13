@@ -3,17 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recipe Finder</title>
+    <title>Recipe Finder - Find Delicious Recipes</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍳</text></svg>">
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
     <div class="container">
         <h1>🍳 Recipe Finder</h1>
         <p class="subtitle">Find delicious recipes by ingredient</p>
-        <form action="/search" method="post" class="search-form">
-            <input type="text" name="ingredient" placeholder="Enter ingredient (e.g., chicken, pasta)" required>
-            <button type="submit">Search Recipes</button>
+        
+        <form action="/search" method="post" class="search-form" id="searchForm">
+            <input type="text" name="ingredient" id="ingredientInput" placeholder="Enter ingredient (e.g., chicken, pasta)" required>
+            <button type="submit" id="searchBtn">Search Recipes</button>
         </form>
+        
+        <div class="divider">OR</div>
+        
+        <a href="/random" class="btn-random">🎲 Surprise Me with a Random Recipe</a>
+        
+        <div class="popular-searches">
+            <p>Popular searches:</p>
+            <div class="tags">
+                <button class="tag" onclick="searchIngredient('chicken')">Chicken</button>
+                <button class="tag" onclick="searchIngredient('pasta')">Pasta</button>
+                <button class="tag" onclick="searchIngredient('beef')">Beef</button>
+                <button class="tag" onclick="searchIngredient('salmon')">Salmon</button>
+                <button class="tag" onclick="searchIngredient('potato')">Potato</button>
+            </div>
+        </div>
     </div>
+    
+    <div id="loadingSpinner" class="loading-overlay" style="display: none;">
+        <div class="spinner"></div>
+        <p>Finding delicious recipes...</p>
+    </div>
+    
+    <script src="/static/script.js"></script>
 </body>
 </html>

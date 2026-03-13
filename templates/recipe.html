@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recipe Details</title>
+    <title>{% if recipe %}{{ recipe.strMeal }} - {% endif %}Recipe Finder</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍳</text></svg>">
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -11,11 +12,11 @@
         {% if recipe %}
             <div class="recipe-detail">
                 <h1>{{ recipe.strMeal }}</h1>
-                <img src="{{ recipe.strMealThumb }}" alt="{{ recipe.strMeal }}" class="recipe-image">
+                <img src="{{ recipe.strMealThumb }}" alt="{{ recipe.strMeal }}" class="recipe-image" loading="lazy">
                 
                 <div class="recipe-info">
-                    <p><strong>Category:</strong> {{ recipe.strCategory }}</p>
-                    <p><strong>Cuisine:</strong> {{ recipe.strArea }}</p>
+                    <span class="badge">{{ recipe.strCategory }}</span>
+                    <span class="badge">{{ recipe.strArea }}</span>
                 </div>
 
                 <h2>Ingredients</h2>
@@ -33,14 +34,21 @@
                 <p class="instructions">{{ recipe.strInstructions }}</p>
 
                 {% if recipe.strYoutube %}
-                <p><a href="{{ recipe.strYoutube }}" target="_blank" class="btn-youtube">Watch Video Tutorial</a></p>
+                <a href="{{ recipe.strYoutube }}" target="_blank" rel="noopener noreferrer" class="btn-youtube">📺 Watch Video Tutorial</a>
                 {% endif %}
             </div>
         {% else %}
-            <p class="no-results">Recipe not found!</p>
+            <div class="error-message">
+                <span class="error-icon">😕</span>
+                <h2>Recipe not found</h2>
+                <p>We couldn't load this recipe. It might have been removed or doesn't exist.</p>
+            </div>
         {% endif %}
         
-        <a href="/" class="btn-back">← Back to Search</a>
+        <div class="action-buttons">
+            <a href="/" class="btn-back">← Back to Search</a>
+            <a href="/random" class="btn-random-small">🎲 Random Recipe</a>
+        </div>
     </div>
 </body>
 </html>

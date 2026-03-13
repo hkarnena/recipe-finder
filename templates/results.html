@@ -3,31 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recipe Results</title>
+    <title>Recipe Results - Recipe Finder</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍳</text></svg>">
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
     <div class="container">
         <h1>🍳 Recipe Results</h1>
         {% if ingredient %}
-        <p class="subtitle">Recipes with "{{ ingredient }}"</p>
+        <p class="subtitle">Found {{ recipes|length if recipes else 0 }} recipes with "{{ ingredient }}"</p>
         {% endif %}
         
         {% if recipes %}
             <div class="recipe-grid">
             {% for recipe in recipes %}
                 <div class="recipe-card">
-                    <img src="{{ recipe.strMealThumb }}" alt="{{ recipe.strMeal }}">
+                    <img src="{{ recipe.strMealThumb }}" alt="{{ recipe.strMeal }}" loading="lazy">
                     <h3>{{ recipe.strMeal }}</h3>
                     <a href="/recipe/{{ recipe.idMeal }}" class="btn-view">View Recipe</a>
                 </div>
             {% endfor %}
             </div>
         {% else %}
-            <p class="no-results">No recipes found. Try another ingredient!</p>
+            <div class="error-message">
+                <span class="error-icon">😕</span>
+                <h2>No recipes found</h2>
+                <p>We couldn't find any recipes with "{{ ingredient }}". Try a different ingredient!</p>
+                <div class="suggestions">
+                    <p>Try searching for:</p>
+                    <button class="tag" onclick="searchIngredient('chicken')">Chicken</button>
+                    <button class="tag" onclick="searchIngredient('pasta')">Pasta</button>
+                    <button class="tag" onclick="searchIngredient('beef')">Beef</button>
+                </div>
+            </div>
         {% endif %}
         
-        <a href="/" class="btn-back">← Search Again</a>
+        <div class="action-buttons">
+            <a href="/" class="btn-back">← Search Again</a>
+            <a href="/random" class="btn-random-small">🎲 Random Recipe</a>
+        </div>
     </div>
+    
+    <script src="/static/script.js"></script>
 </body>
 </html>
