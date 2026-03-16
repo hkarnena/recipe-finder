@@ -8,28 +8,25 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <!-- Navigation Bar -->
+
     <nav class="navbar">
         <div class="nav-container">
-            <a href="/" class="logo">
-                <span class="logo-icon">🍳</span>
-                <span>Recipe Finder</span>
-            </a>
+            <a href="/" class="logo">recipe<span>.</span></a>
             <ul class="nav-links">
                 <li><a href="/">Home</a></li>
-                <li><a href="/random">Random Recipe</a></li>
+                <li><a href="/random">Random</a></li>
                 <li><a href="#" onclick="showFavorites(); return false;">Favorites (<span id="favCount">0</span>)</a></li>
-                <li><button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme"><span class="theme-icon">🌙</span></button></li>
+                <li><a href="#" onclick="showFavorites(); return false;" class="nav-cta">My Saved Recipes</a></li>
+                <li><button class="theme-toggle" onclick="toggleTheme()"><span class="theme-icon">🌙</span></button></li>
             </ul>
         </div>
     </nav>
 
-    <!-- Results Container -->
-    <div class="container">
+    <div class="page-container">
         <div class="page-header">
             <h1>Search Results</h1>
             {% if ingredient %}
-            <p>Found {{ recipes|length if recipes else 0 }} recipes with "{{ ingredient }}"</p>
+            <p>{{ recipes|length if recipes else 0 }} recipes found for "{{ ingredient }}"</p>
             {% endif %}
         </div>
 
@@ -37,23 +34,23 @@
             <div class="recipe-grid">
             {% for recipe in recipes %}
                 <div class="recipe-card">
-                    <button class="favorite-btn" onclick="toggleFavorite('{{ recipe.idMeal }}', '{{ recipe.strMeal }}', '{{ recipe.strMealThumb }}')" aria-label="Add to favorites">
+                    <button class="favorite-btn" onclick="toggleFavorite('{{ recipe.idMeal }}', '{{ recipe.strMeal }}', '{{ recipe.strMealThumb }}')" aria-label="Save recipe">
                         <span class="heart" id="heart-{{ recipe.idMeal }}">♡</span>
                     </button>
-                    <img src="{{ recipe.strMealThumb }}" alt="{{ recipe.strMeal }}" class="recipe-image" loading="lazy">
+                    <img src="{{ recipe.strMealThumb }}" alt="{{ recipe.strMeal }}" loading="lazy">
                     <div class="recipe-content">
                         <h3 class="recipe-title">{{ recipe.strMeal }}</h3>
-                        <a href="/recipe/{{ recipe.idMeal }}" class="recipe-btn">View Recipe</a>
+                        <a href="/recipe/{{ recipe.idMeal }}" class="recipe-btn">View Recipe →</a>
                     </div>
                 </div>
             {% endfor %}
             </div>
         {% else %}
             <div class="error-message">
-                <div class="error-icon">😕</div>
-                <h2>No Recipes Found</h2>
-                <p>We couldn't find any recipes with "{{ ingredient }}". Try searching for something else!</p>
-                <div class="tags">
+                <div class="error-icon">🔍</div>
+                <h2>No recipes found</h2>
+                <p>Try searching for "chicken", "pasta", or "beef"</p>
+                <div class="hero-tags" style="justify-content: center; margin-top: 1rem;">
                     <button class="tag" onclick="searchIngredient('chicken')">Chicken</button>
                     <button class="tag" onclick="searchIngredient('pasta')">Pasta</button>
                     <button class="tag" onclick="searchIngredient('beef')">Beef</button>
@@ -62,16 +59,15 @@
         {% endif %}
 
         <div class="action-buttons">
-            <a href="/" class="btn btn-outline">← Back to Search</a>
+            <a href="/" class="btn btn-outline">← Back to Home</a>
             <a href="/random" class="btn btn-secondary">🎲 Random Recipe</a>
         </div>
     </div>
 
-    <!-- Favorites Modal -->
     <div id="favoritesModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeFavorites()">&times;</span>
-            <h2>My Favorite Recipes</h2>
+            <h2>My Saved Recipes</h2>
             <div id="favoritesList" class="recipe-grid"></div>
         </div>
     </div>

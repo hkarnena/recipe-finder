@@ -8,34 +8,42 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <!-- Navigation Bar -->
+
     <nav class="navbar">
         <div class="nav-container">
-            <a href="/" class="logo">
-                <span class="logo-icon">🍳</span>
-                <span>Recipe Finder</span>
-            </a>
+            <a href="/" class="logo">recipe<span>.</span></a>
             <ul class="nav-links">
                 <li><a href="/">Home</a></li>
-                <li><a href="/random">Random Recipe</a></li>
+                <li><a href="/random">Random</a></li>
                 <li><a href="#" onclick="showFavorites(); return false;">Favorites (<span id="favCount">0</span>)</a></li>
-                <li><button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme"><span class="theme-icon">🌙</span></button></li>
+                <li><a href="#" onclick="showFavorites(); return false;" class="nav-cta">My Saved Recipes</a></li>
+                <li><button class="theme-toggle" onclick="toggleTheme()"><span class="theme-icon">🌙</span></button></li>
             </ul>
         </div>
     </nav>
 
-    <!-- Recipe Detail -->
-    <div class="recipe-detail">
+    <div class="recipe-detail-container">
         {% if recipe %}
-            <div class="recipe-header">
-                <h1>{{ recipe.strMeal }}</h1>
+            <div class="recipe-detail-header">
                 <div class="recipe-meta">
                     <span class="badge">{{ recipe.strCategory }}</span>
                     <span class="badge">{{ recipe.strArea }}</span>
                 </div>
+                <h1>{{ recipe.strMeal }}</h1>
             </div>
 
-            <img src="{{ recipe.strMealThumb }}" alt="{{ recipe.strMeal }}" class="recipe-image-large" loading="lazy">
+            <img src="{{ recipe.strMealThumb }}" alt="{{ recipe.strMeal }}" class="recipe-detail-img" loading="lazy">
+
+            <div class="action-buttons">
+                <button onclick="toggleFavorite('{{ recipe.idMeal }}', '{{ recipe.strMeal }}', '{{ recipe.strMealThumb }}')" class="btn btn-primary">
+                    <span class="heart" id="heart-{{ recipe.idMeal }}">♡</span> Save Recipe
+                </button>
+                <button onclick="shareRecipe('{{ recipe.strMeal }}', '{{ recipe.idMeal }}')" class="btn btn-secondary">📤 Share</button>
+                <button onclick="printRecipe()" class="btn btn-outline">🖨️ Print</button>
+                {% if recipe.strYoutube %}
+                <a href="{{ recipe.strYoutube }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline">📺 Watch Video</a>
+                {% endif %}
+            </div>
 
             <div class="recipe-section">
                 <h2>Ingredients</h2>
@@ -55,38 +63,24 @@
                 <p class="instructions">{{ recipe.strInstructions }}</p>
             </div>
 
-            {% if recipe.strYoutube %}
-            <div class="action-buttons">
-                <a href="{{ recipe.strYoutube }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">📺 Watch Video Tutorial</a>
-            </div>
-            {% endif %}
-
-            <div class="action-buttons">
-                <button onclick="toggleFavorite('{{ recipe.idMeal }}', '{{ recipe.strMeal }}', '{{ recipe.strMealThumb }}')" class="btn btn-primary">
-                    <span class="heart" id="heart-{{ recipe.idMeal }}">♡</span> Save Recipe
-                </button>
-                <button onclick="printRecipe()" class="btn btn-secondary">🖨️ Print Recipe</button>
-                <button onclick="shareRecipe('{{ recipe.strMeal }}', '{{ recipe.idMeal }}')" class="btn btn-secondary">📤 Share</button>
-            </div>
         {% else %}
             <div class="error-message">
                 <div class="error-icon">😕</div>
-                <h2>Recipe Not Found</h2>
-                <p>We couldn't load this recipe. It might have been removed or doesn't exist.</p>
+                <h2>Recipe not found</h2>
+                <p>This recipe doesn't exist or was removed.</p>
             </div>
         {% endif %}
 
         <div class="action-buttons">
             <a href="/" class="btn btn-outline">← Back to Home</a>
-            <a href="/random" class="btn btn-secondary">🎲 Another Random Recipe</a>
+            <a href="/random" class="btn btn-secondary">🎲 Try Another</a>
         </div>
     </div>
 
-    <!-- Favorites Modal -->
     <div id="favoritesModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeFavorites()">&times;</span>
-            <h2>My Favorite Recipes</h2>
+            <h2>My Saved Recipes</h2>
             <div id="favoritesList" class="recipe-grid"></div>
         </div>
     </div>

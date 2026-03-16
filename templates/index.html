@@ -8,49 +8,34 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <!-- Navigation Bar -->
+
     <nav class="navbar">
         <div class="nav-container">
-            <a href="/" class="logo">
-                <span class="logo-icon">🍳</span>
-                <span>Recipe Finder</span>
-            </a>
+            <a href="/" class="logo">recipe<span>.</span></a>
             <ul class="nav-links">
                 <li><a href="/">Home</a></li>
-                <li><a href="/random">Random Recipe</a></li>
+                <li><a href="/random">Random</a></li>
                 <li><a href="#" onclick="showFavorites(); return false;">Favorites (<span id="favCount">0</span>)</a></li>
-                <li><button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme"><span class="theme-icon">🌙</span></button></li>
+                <li><a href="#" onclick="showFavorites(); return false;" class="nav-cta">My Saved Recipes</a></li>
+                <li><button class="theme-toggle" onclick="toggleTheme()"><span class="theme-icon">🌙</span></button></li>
             </ul>
         </div>
     </nav>
 
-    <!-- Hero Section -->
+    <!-- Hero -->
     <section class="hero">
-        <h1><span class="highlight">Discover</span> Your Perfect Recipe</h1>
-        <p>Search thousands of delicious recipes from around the world</p>
-        
-        <div class="search-container">
-            <form action="/search" method="post" class="search-form" id="searchForm">
-                <input 
-                    type="text" 
-                    name="ingredient" 
-                    id="ingredientInput"
-                    class="search-input" 
-                    placeholder="Enter an ingredient (e.g., chicken, pasta, tomato)" 
-                    required
-                >
-                <button type="submit" class="search-btn" id="searchBtn">Search Recipes</button>
+        <div class="hero-left">
+            <span class="hero-eyebrow">🍳 Free Recipe Search</span>
+            <h1>Find your next<br><span class="highlight">favourite meal</span></h1>
+            <p>Search thousands of recipes by ingredient. From quick weeknight dinners to weekend feasts — discover something delicious today.</p>
+
+            <form action="/search" method="post" class="hero-search" id="searchForm">
+                <input type="text" name="ingredient" id="ingredientInput" placeholder="Enter an ingredient (e.g. chicken, pasta...)" required>
+                <button type="submit">Search Recipes</button>
             </form>
-        </div>
 
-        <div class="quick-actions">
-            <a href="/random" class="quick-btn">🎲 Random Recipe</a>
-            <a href="#" onclick="showFavorites(); return false;" class="quick-btn">❤️ My Favorites</a>
-        </div>
-
-        <div class="popular-tags">
-            <h3>Popular Ingredients</h3>
-            <div class="tags">
+            <div class="hero-tags">
+                <span>Try:</span>
                 <button class="tag" onclick="searchIngredient('chicken')">Chicken</button>
                 <button class="tag" onclick="searchIngredient('pasta')">Pasta</button>
                 <button class="tag" onclick="searchIngredient('beef')">Beef</button>
@@ -58,50 +43,97 @@
                 <button class="tag" onclick="searchIngredient('rice')">Rice</button>
             </div>
         </div>
-    </section>
 
-    <!-- Categories Section -->
-    <section class="categories">
-        <h2>Browse by Category</h2>
-        <div class="category-grid">
-            <a href="/category/Breakfast" class="category-card">
-                <div class="category-icon">🍳</div>
-                <div class="category-name">Breakfast</div>
-            </a>
-            <a href="/category/Dessert" class="category-card">
-                <div class="category-icon">🍰</div>
-                <div class="category-name">Dessert</div>
-            </a>
-            <a href="/category/Vegetarian" class="category-card">
-                <div class="category-icon">🥗</div>
-                <div class="category-name">Vegetarian</div>
-            </a>
-            <a href="/category/Seafood" class="category-card">
-                <div class="category-icon">🦐</div>
-                <div class="category-name">Seafood</div>
-            </a>
-            <a href="/category/Pasta" class="category-card">
-                <div class="category-icon">🍝</div>
-                <div class="category-name">Pasta</div>
-            </a>
-            <a href="/category/Chicken" class="category-card">
-                <div class="category-icon">🍗</div>
-                <div class="category-name">Chicken</div>
-            </a>
+        <div class="hero-right">
+            <div class="hero-food-card featured">
+                <img src="https://www.themealdb.com/images/media/meals/llcbn01574260722.jpg" alt="Featured Recipe">
+                <div class="hero-food-card-info">
+                    <h4>Chicken Handi</h4>
+                    <span>Pakistani · Main Course</span>
+                </div>
+            </div>
+            <div class="hero-food-card">
+                <img src="https://www.themealdb.com/images/media/meals/ustsqw1468250014.jpg" alt="Recipe">
+                <div class="hero-food-card-info">
+                    <h4>Beef Bourguignon</h4>
+                    <span>French · Dinner</span>
+                </div>
+            </div>
+            <div class="hero-food-card">
+                <img src="https://www.themealdb.com/images/media/meals/wvpsxx1468256321.jpg" alt="Recipe">
+                <div class="hero-food-card-info">
+                    <h4>Penne Arrabiata</h4>
+                    <span>Italian · Pasta</span>
+                </div>
+            </div>
         </div>
     </section>
 
-    <!-- Loading Spinner -->
-    <div id="loadingSpinner" class="loading-overlay" style="display: none;">
-        <div class="spinner"></div>
-        <p>Finding delicious recipes...</p>
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+        <div class="stats-container">
+            <div class="stat-item">
+                <span class="stat-number">300+</span>
+                <span class="stat-label">Recipes Available</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">20+</span>
+                <span class="stat-label">Cuisines</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">100%</span>
+                <span class="stat-label">Free to Use</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">6</span>
+                <span class="stat-label">Categories</span>
+            </div>
+        </div>
     </div>
 
-    <!-- Favorites Modal -->
+    <!-- Categories -->
+    <div class="section">
+        <div class="section-header">
+            <h2>Browse by Category</h2>
+            <a href="/random">View random →</a>
+        </div>
+        <div class="category-grid">
+            <a href="/category/Breakfast" class="category-card">
+                <span class="category-icon">🍳</span>
+                <span class="category-name">Breakfast</span>
+            </a>
+            <a href="/category/Dessert" class="category-card">
+                <span class="category-icon">🍰</span>
+                <span class="category-name">Dessert</span>
+            </a>
+            <a href="/category/Vegetarian" class="category-card">
+                <span class="category-icon">🥗</span>
+                <span class="category-name">Vegetarian</span>
+            </a>
+            <a href="/category/Seafood" class="category-card">
+                <span class="category-icon">🦐</span>
+                <span class="category-name">Seafood</span>
+            </a>
+            <a href="/category/Pasta" class="category-card">
+                <span class="category-icon">🍝</span>
+                <span class="category-name">Pasta</span>
+            </a>
+            <a href="/category/Chicken" class="category-card">
+                <span class="category-icon">🍗</span>
+                <span class="category-name">Chicken</span>
+            </a>
+        </div>
+    </div>
+
+    <div id="loadingSpinner" class="loading-overlay" style="display: none;">
+        <div class="spinner"></div>
+        <p>Finding recipes...</p>
+    </div>
+
     <div id="favoritesModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeFavorites()">&times;</span>
-            <h2>My Favorite Recipes</h2>
+            <h2>My Saved Recipes</h2>
             <div id="favoritesList" class="recipe-grid"></div>
         </div>
     </div>
