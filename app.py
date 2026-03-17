@@ -13,8 +13,8 @@ app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Load Spoonacular API key from environment variable
-SPOONACULAR_KEY = os.environ.get("SPOONACULAR_KEY", "")
+# Load Spoonacular API key — hardcoded fallback for local dev safety
+SPOONACULAR_KEY = os.environ.get("SPOONACULAR_KEY", "c5baffb0f2ea46e68121aa602f8f7d27")
 
 # ── Instruction parser ────────────────────────────────────────────────────────
 
@@ -108,37 +108,53 @@ def spoonacular_detail(spoon_id: int) -> dict | None:
         )
         d = r.json()
 
-        # Build instructions string
-        instructions = d.get("instructions") or ""
-        # Also try analyzedInstructions for cleaner steps
+        # Build instructions from analyzed steps (cleaner than raw HTML)
+        instructions = ""
         analyzed = d.get("analyzedInstructions", [])
         if analyzed:
             steps = []
             for section in analyzed:
                 for step in section.get("steps", []):
                     steps.append(step.get("step", ""))
-            if steps:
-                instructions = "\n".join(steps)
+            instructions = "\n".join(steps)
+        if not instructions:
+            # Strip HTML tags from raw instructions as fallback
+            raw = d.get("instructions") or ""
+            instructions = re.sub(r'<[^>]+>', ' ', raw).strip()
 
-        # Build ingredients list (MealDB uses strIngredient1..20 / strMeasure1..20)
-        ingredients = d.get("extendedIngredients", [])
+        # Category: use first dishType, capitalised
+        dish_types = d.get("dishTypes", [])
+        category = dish_types[0].title() if dish_types else "Recipe"
+
+        # Area/cuisine
+        cuisines = d.get("cuisines", [])
+        area = cuisines[0] if cuisines else "International"
+
         recipe = {
             "idMeal": f"sp_{d['id']}",
-            "strMeal": d.get("title", ""),
+            "strMeal": d.get("title", ""),          # Spoonacular titles are already proper case
             "strMealThumb": d.get("image", ""),
-            "strCategory": ", ".join(d.get("dishTypes", [])) or "Recipe",
-            "strArea": "International",
+            "strCategory": category,
+            "strArea": area,
             "strInstructions": instructions,
             "strYoutube": "",
             "strSource": d.get("sourceUrl", ""),
         }
+
+        # Ingredients — use original string for measure, name for ingredient
+        ingredients = d.get("extendedIngredients", [])
         for i, ing in enumerate(ingredients[:20], start=1):
-            recipe[f"strIngredient{i}"] = ing.get("name", "")
-            recipe[f"strMeasure{i}"] = ing.get("original", "").split(ing.get("name",""))[0].strip()
-        # Fill remaining slots with empty strings
+            name = ing.get("name", "").strip()
+            # measure = everything in 'original' before the ingredient name
+            original = ing.get("original", "")
+            measure = original.replace(name, "").strip(" ,")
+            recipe[f"strIngredient{i}"] = name
+            recipe[f"strMeasure{i}"] = measure
+
         for i in range(len(ingredients) + 1, 21):
             recipe[f"strIngredient{i}"] = ""
             recipe[f"strMeasure{i}"] = ""
+
         return recipe
     except Exception:
         return None
