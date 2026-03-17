@@ -28,14 +28,34 @@ def search(request: Request, ingredient: str = Form(...)):
 # Browse by cuisine
 @app.get("/cuisine/{cuisine_name}", response_class=HTMLResponse)
 def browse_cuisine(request: Request, cuisine_name: str):
-    api_url = f"https://www.themealdb.com/api/json/v1/1/filter.php?a={cuisine_name}"
+    # Fetch by area (cuisine)
+    area_url = f"https://www.themealdb.com/api/json/v1/1/filter.php?a={cuisine_name}"
     try:
-        response = requests.get(api_url, timeout=10)
+        response = requests.get(area_url, timeout=10)
         response.raise_for_status()
-        recipes = response.json().get("meals", [])
+        recipes = response.json().get("meals", []) or []
     except Exception:
         recipes = []
-    return templates.TemplateResponse("results.html", {"request": request, "recipes": recipes, "ingredient": cuisine_name})
+
+    # If fewer than 5 results, also search by ingredient name as fallback
+    if len(recipes) < 5:
+        try:
+            fallback_url = f"https://www.themealdb.com/api/json/v1/1/search.php?s={cuisine_name}"
+            fb = requests.get(fallback_url, timeout=10).json().get("meals", []) or []
+            # Merge without duplicates
+            existing_ids = {r["idMeal"] for r in recipes}
+            for meal in fb:
+                if meal["idMeal"] not in existing_ids:
+                    recipes.append(meal)
+        except Exception:
+            pass
+
+    return templates.TemplateResponse("results.html", {
+        "request": request,
+        "recipes": recipes,
+        "ingredient": cuisine_name,
+        "is_cuisine": True
+    })
 
 # Browse by category
 @app.get("/category/{category_name}", response_class=HTMLResponse)

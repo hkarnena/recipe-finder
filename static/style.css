@@ -883,3 +883,44 @@ body.dark-mode .btn-secondary:hover {
   .cuisine-grid { grid-template-columns: repeat(2, 1fr) !important; }
   .cuisine-section { padding: 60px 1.5rem; }
 }
+
+/* CUISINE SEARCH BAR */
+.cuisine-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 0.75rem 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow);
+  max-width: 500px;
+  transition: all 0.2s;
+}
+
+.cuisine-search-bar:focus-within {
+  border-color: var(--primary-action);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+}
+
+.cuisine-search-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.cuisine-search-bar input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  color: var(--text-main);
+  width: 100%;
+}
+
+.cuisine-search-bar input::placeholder {
+  color: var(--text-muted);
+}

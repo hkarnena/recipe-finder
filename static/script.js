@@ -1,3 +1,13 @@
+// Filter cuisine cards by search input
+function filterCuisines(query) {
+    const cards = document.querySelectorAll('#cuisineGrid .cuisine-card');
+    const q = query.toLowerCase();
+    cards.forEach(card => {
+        const name = card.querySelector('.cuisine-name').textContent.toLowerCase();
+        card.style.display = name.includes(q) ? '' : 'none';
+    });
+}
+
 // Show loading spinner on form submit
 document.addEventListener('DOMContentLoaded', function() {
     const searchForm = document.getElementById('searchForm');

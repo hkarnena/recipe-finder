@@ -132,7 +132,14 @@
                 <h2>Explore by Cuisine</h2>
                 <a href="/random">Surprise me →</a>
             </div>
-            <div class="cuisine-grid">
+
+            <!-- Cuisine Search -->
+            <div class="cuisine-search-bar">
+                <span class="cuisine-search-icon">🔍</span>
+                <input type="text" id="cuisineSearch" placeholder="Search a cuisine... (e.g. Italian, Thai, Indian)" oninput="filterCuisines(this.value)">
+            </div>
+
+            <div class="cuisine-grid" id="cuisineGrid">
                 <a href="/cuisine/Italian" class="cuisine-card" style="--cuisine-color:#e8734a;">
                     <span class="cuisine-flag">🇮🇹</span>
                     <span class="cuisine-name">Italian</span>
