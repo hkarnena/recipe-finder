@@ -22,6 +22,24 @@
         </div>
     </nav>
 
+    <!-- Search + Filter Bar -->
+    <div class="results-toolbar">
+        <div class="results-toolbar-inner">
+            <form action="/search" method="post" class="toolbar-search" id="searchForm">
+                <span>🔍</span>
+                <input type="text" name="ingredient" id="ingredientInput"
+                    placeholder="Search again..."
+                    value="{{ ingredient }}" required>
+                <button type="submit">Search</button>
+            </form>
+            <div class="diet-filters">
+                <button class="diet-btn active" onclick="filterDiet('all', this)">🍽️ All</button>
+                <button class="diet-btn veg" onclick="filterDiet('veg', this)">🥦 Vegetarian</button>
+                <button class="diet-btn nonveg" onclick="filterDiet('nonveg', this)">🍗 Non-Veg</button>
+            </div>
+        </div>
+    </div>
+
     <div class="page-container">
         <div class="page-header">
             <h1>Search Results</h1>
@@ -31,12 +49,25 @@
         </div>
 
         {% if recipes %}
-            <div class="recipe-grid">
+            <div class="recipe-grid" id="recipeGrid">
             {% for recipe in recipes %}
-                <div class="recipe-card">
+                {% set name_lower = recipe.strMeal.lower() if recipe.strMeal else '' %}
+                {% set is_veg = 'true' if (
+                    'vegetarian' in name_lower or 'veg' in name_lower or
+                    'salad' in name_lower or 'soup' in name_lower or
+                    'mushroom' in name_lower or 'paneer' in name_lower or
+                    'tofu' in name_lower or 'lentil' in name_lower or
+                    'dal' in name_lower or 'pasta' in name_lower or
+                    'cheese' in name_lower or 'potato' in name_lower or
+                    'tomato' in name_lower or 'pumpkin' in name_lower
+                ) else 'false' %}
+                <div class="recipe-card" data-veg="{{ is_veg }}">
                     <button class="favorite-btn" onclick="toggleFavorite('{{ recipe.idMeal }}', '{{ recipe.strMeal }}', '{{ recipe.strMealThumb }}')" aria-label="Save recipe">
                         <span class="heart" id="heart-{{ recipe.idMeal }}">♡</span>
                     </button>
+                    {% if is_veg == 'true' %}
+                    <span class="veg-badge">🥦 Veg</span>
+                    {% endif %}
                     <img src="{{ recipe.strMealThumb }}" alt="{{ recipe.strMeal }}" loading="lazy">
                     <div class="recipe-content">
                         <h3 class="recipe-title">{{ recipe.strMeal }}</h3>
@@ -78,6 +109,20 @@
             updateFavoriteButtons();
             updateFavoriteCount();
         });
+
+        function filterDiet(type, btn) {
+            document.querySelectorAll('.diet-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.querySelectorAll('#recipeGrid .recipe-card').forEach(card => {
+                if (type === 'all') {
+                    card.style.display = '';
+                } else if (type === 'veg') {
+                    card.style.display = card.dataset.veg === 'true' ? '' : 'none';
+                } else {
+                    card.style.display = card.dataset.veg === 'false' ? '' : 'none';
+                }
+            });
+        }
     </script>
 </body>
 </html>

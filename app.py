@@ -16,14 +16,46 @@ def home(request: Request):
 # Search recipes
 @app.post("/search", response_class=HTMLResponse)
 def search(request: Request, ingredient: str = Form(...)):
-    api_url = f"https://www.themealdb.com/api/json/v1/1/filter.php?i={ingredient}"
+    recipes = []
+    seen_ids = set()
+
+    # Try ingredient search first
     try:
-        response = requests.get(api_url, timeout=10)
-        response.raise_for_status()
-        recipes = response.json().get("meals", [])
-    except Exception as e:
-        recipes = []
-    return templates.TemplateResponse("results.html", {"request": request, "recipes": recipes, "ingredient": ingredient})
+        r1 = requests.get(f"https://www.themealdb.com/api/json/v1/1/filter.php?i={ingredient}", timeout=10)
+        for m in (r1.json().get("meals") or []):
+            if m["idMeal"] not in seen_ids:
+                recipes.append(m)
+                seen_ids.add(m["idMeal"])
+    except Exception:
+        pass
+
+    # Also search by meal name
+    try:
+        r2 = requests.get(f"https://www.themealdb.com/api/json/v1/1/search.php?s={ingredient}", timeout=10)
+        for m in (r2.json().get("meals") or []):
+            if m["idMeal"] not in seen_ids:
+                recipes.append(m)
+                seen_ids.add(m["idMeal"])
+    except Exception:
+        pass
+
+    # If still empty, try first word only
+    if not recipes and " " in ingredient:
+        first_word = ingredient.split()[0]
+        try:
+            r3 = requests.get(f"https://www.themealdb.com/api/json/v1/1/filter.php?i={first_word}", timeout=10)
+            for m in (r3.json().get("meals") or []):
+                if m["idMeal"] not in seen_ids:
+                    recipes.append(m)
+                    seen_ids.add(m["idMeal"])
+        except Exception:
+            pass
+
+    return templates.TemplateResponse("results.html", {
+        "request": request,
+        "recipes": recipes,
+        "ingredient": ingredient
+    })
 
 # Browse by cuisine
 @app.get("/cuisine/{cuisine_name}", response_class=HTMLResponse)
