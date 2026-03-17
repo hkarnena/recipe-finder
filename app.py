@@ -20,19 +20,21 @@ def parse_instructions(text: str) -> list[str]:
 
     steps = []
     for line in lines:
-        # If a line is already short (a single step), keep it
-        # If it's a long paragraph, split on ". " sentence boundaries
         if len(line) < 200:
-            # Strip leading step numbers like "1." "Step 1:" etc.
-            line = re.sub(r'^(step\s*)?\d+[\.\):\-]\s*', '', line, flags=re.IGNORECASE)
-            if line:
-                steps.append(line)
+            # Strip leading step labels like "1." "Step 1:" "step 2" etc.
+            cleaned = re.sub(r'^(step\s*)?\d+[\.\):\-]?\s*$', '', line, flags=re.IGNORECASE).strip()
+            # Skip lines that were ONLY a step label (e.g. "step 1", "Step 2")
+            if re.fullmatch(r'(step\s*)?\d+', line.strip(), re.IGNORECASE):
+                continue
+            cleaned = re.sub(r'^(step\s*)?\d+[\.\):\-]\s*', '', line, flags=re.IGNORECASE).strip()
+            if cleaned and len(cleaned) > 4:
+                steps.append(cleaned)
         else:
             # Split long paragraph into sentences
             sentences = re.split(r'(?<=[.!?])\s+', line)
             for s in sentences:
                 s = s.strip()
-                s = re.sub(r'^(step\s*)?\d+[\.\):\-]\s*', '', s, flags=re.IGNORECASE)
+                s = re.sub(r'^(step\s*)?\d+[\.\):\-]\s*', '', s, flags=re.IGNORECASE).strip()
                 if s and len(s) > 10:
                     steps.append(s)
 
