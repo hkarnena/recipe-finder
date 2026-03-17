@@ -4,137 +4,231 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 import requests
 import re
+import os
+from dotenv import load_dotenv
+
+load_dotenv()  # loads .env locally; on Render it reads from environment variables
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+# Load Spoonacular API key from environment variable
+SPOONACULAR_KEY = os.environ.get("SPOONACULAR_KEY", "")
+
+# ── Instruction parser ────────────────────────────────────────────────────────
+
 def parse_instructions(text: str) -> list[str]:
-    """Split raw instruction text into clean numbered steps."""
     if not text:
         return []
-
-    # Split on newlines first
     lines = [l.strip() for l in text.splitlines()]
-    lines = [l for l in lines if l]  # remove empty lines
-
+    lines = [l for l in lines if l]
     steps = []
     for line in lines:
+        if re.fullmatch(r'(step\s*)?\d+', line.strip(), re.IGNORECASE):
+            continue
         if len(line) < 200:
-            # Strip leading step labels like "1." "Step 1:" "step 2" etc.
-            cleaned = re.sub(r'^(step\s*)?\d+[\.\):\-]?\s*$', '', line, flags=re.IGNORECASE).strip()
-            # Skip lines that were ONLY a step label (e.g. "step 1", "Step 2")
-            if re.fullmatch(r'(step\s*)?\d+', line.strip(), re.IGNORECASE):
-                continue
             cleaned = re.sub(r'^(step\s*)?\d+[\.\):\-]\s*', '', line, flags=re.IGNORECASE).strip()
             if cleaned and len(cleaned) > 4:
                 steps.append(cleaned)
         else:
-            # Split long paragraph into sentences
-            sentences = re.split(r'(?<=[.!?])\s+', line)
-            for s in sentences:
-                s = s.strip()
-                s = re.sub(r'^(step\s*)?\d+[\.\):\-]\s*', '', s, flags=re.IGNORECASE).strip()
+            for s in re.split(r'(?<=[.!?])\s+', line):
+                s = re.sub(r'^(step\s*)?\d+[\.\):\-]\s*', '', s.strip(), flags=re.IGNORECASE).strip()
                 if s and len(s) > 10:
                     steps.append(s)
-
-    # Deduplicate while preserving order
-    seen = set()
-    unique = []
+    seen, unique = set(), []
     for s in steps:
         if s not in seen:
             seen.add(s)
             unique.append(s)
-
     return unique
 
 templates.env.filters["parse_instructions"] = parse_instructions
 
-# Home page
+# ── Spoonacular helpers ───────────────────────────────────────────────────────
+
+def spoonacular_search(query: str, number: int = 20) -> list[dict]:
+    """Search Spoonacular and return results normalised to MealDB card shape."""
+    if not SPOONACULAR_KEY:
+        return []
+    try:
+        r = requests.get(
+            "https://api.spoonacular.com/recipes/complexSearch",
+            params={"query": query, "number": number, "apiKey": SPOONACULAR_KEY},
+            timeout=10
+        )
+        results = r.json().get("results", [])
+        return [
+            {
+                "idMeal": f"sp_{item['id']}",
+                "strMeal": item["title"],
+                "strMealThumb": item.get("image", ""),
+                "_source": "spoonacular",
+                "_spoon_id": item["id"],
+            }
+            for item in results
+        ]
+    except Exception:
+        return []
+
+
+def spoonacular_by_ingredient(ingredient: str, number: int = 20) -> list[dict]:
+    """Find recipes by ingredient via Spoonacular."""
+    if not SPOONACULAR_KEY:
+        return []
+    try:
+        r = requests.get(
+            "https://api.spoonacular.com/recipes/findByIngredients",
+            params={"ingredients": ingredient, "number": number, "apiKey": SPOONACULAR_KEY},
+            timeout=10
+        )
+        return [
+            {
+                "idMeal": f"sp_{item['id']}",
+                "strMeal": item["title"],
+                "strMealThumb": item.get("image", ""),
+                "_source": "spoonacular",
+                "_spoon_id": item["id"],
+            }
+            for item in (r.json() or [])
+        ]
+    except Exception:
+        return []
+
+
+def spoonacular_detail(spoon_id: int) -> dict | None:
+    """Fetch full recipe detail from Spoonacular and normalise to MealDB shape."""
+    if not SPOONACULAR_KEY:
+        return None
+    try:
+        r = requests.get(
+            f"https://api.spoonacular.com/recipes/{spoon_id}/information",
+            params={"apiKey": SPOONACULAR_KEY},
+            timeout=10
+        )
+        d = r.json()
+
+        # Build instructions string
+        instructions = d.get("instructions") or ""
+        # Also try analyzedInstructions for cleaner steps
+        analyzed = d.get("analyzedInstructions", [])
+        if analyzed:
+            steps = []
+            for section in analyzed:
+                for step in section.get("steps", []):
+                    steps.append(step.get("step", ""))
+            if steps:
+                instructions = "\n".join(steps)
+
+        # Build ingredients list (MealDB uses strIngredient1..20 / strMeasure1..20)
+        ingredients = d.get("extendedIngredients", [])
+        recipe = {
+            "idMeal": f"sp_{d['id']}",
+            "strMeal": d.get("title", ""),
+            "strMealThumb": d.get("image", ""),
+            "strCategory": ", ".join(d.get("dishTypes", [])) or "Recipe",
+            "strArea": "International",
+            "strInstructions": instructions,
+            "strYoutube": "",
+            "strSource": d.get("sourceUrl", ""),
+        }
+        for i, ing in enumerate(ingredients[:20], start=1):
+            recipe[f"strIngredient{i}"] = ing.get("name", "")
+            recipe[f"strMeasure{i}"] = ing.get("original", "").split(ing.get("name",""))[0].strip()
+        # Fill remaining slots with empty strings
+        for i in range(len(ingredients) + 1, 21):
+            recipe[f"strIngredient{i}"] = ""
+            recipe[f"strMeasure{i}"] = ""
+        return recipe
+    except Exception:
+        return None
+
+
+def merge_unique(base: list, extra: list) -> list:
+    """Merge two recipe lists, deduplicating by idMeal."""
+    seen = {r["idMeal"] for r in base}
+    for r in extra:
+        if r["idMeal"] not in seen:
+            base.append(r)
+            seen.add(r["idMeal"])
+    return base
+
+# ── Routes ────────────────────────────────────────────────────────────────────
+
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-# Search recipes
+
 @app.post("/search", response_class=HTMLResponse)
 def search(request: Request, ingredient: str = Form(...)):
     recipes = []
     seen_ids = set()
 
-    # Try ingredient search first
+    def add(meals):
+        for m in (meals or []):
+            if m["idMeal"] not in seen_ids:
+                recipes.append(m)
+                seen_ids.add(m["idMeal"])
+
+    # MealDB: ingredient filter
     try:
         r1 = requests.get(f"https://www.themealdb.com/api/json/v1/1/filter.php?i={ingredient}", timeout=10)
-        for m in (r1.json().get("meals") or []):
-            if m["idMeal"] not in seen_ids:
-                recipes.append(m)
-                seen_ids.add(m["idMeal"])
+        add(r1.json().get("meals"))
     except Exception:
         pass
 
-    # Also search by meal name
+    # MealDB: name search
     try:
         r2 = requests.get(f"https://www.themealdb.com/api/json/v1/1/search.php?s={ingredient}", timeout=10)
-        for m in (r2.json().get("meals") or []):
-            if m["idMeal"] not in seen_ids:
-                recipes.append(m)
-                seen_ids.add(m["idMeal"])
+        add(r2.json().get("meals"))
     except Exception:
         pass
 
-    # If still empty, try first word only
+    # MealDB: first-word fallback
     if not recipes and " " in ingredient:
-        first_word = ingredient.split()[0]
         try:
-            r3 = requests.get(f"https://www.themealdb.com/api/json/v1/1/filter.php?i={first_word}", timeout=10)
-            for m in (r3.json().get("meals") or []):
-                if m["idMeal"] not in seen_ids:
-                    recipes.append(m)
-                    seen_ids.add(m["idMeal"])
+            r3 = requests.get(f"https://www.themealdb.com/api/json/v1/1/filter.php?i={ingredient.split()[0]}", timeout=10)
+            add(r3.json().get("meals"))
         except Exception:
             pass
 
+    # Spoonacular: by ingredient + by name search
+    add(spoonacular_by_ingredient(ingredient, number=20))
+    add(spoonacular_search(ingredient, number=20))
+
     return templates.TemplateResponse("results.html", {
-        "request": request,
-        "recipes": recipes,
-        "ingredient": ingredient
+        "request": request, "recipes": recipes, "ingredient": ingredient
     })
 
-# Browse by cuisine
+
 @app.get("/cuisine/{cuisine_name}", response_class=HTMLResponse)
 def browse_cuisine(request: Request, cuisine_name: str):
-    # Fetch by area (cuisine)
-    area_url = f"https://www.themealdb.com/api/json/v1/1/filter.php?a={cuisine_name}"
+    recipes = []
     try:
-        response = requests.get(area_url, timeout=10)
-        response.raise_for_status()
-        recipes = response.json().get("meals", []) or []
+        r = requests.get(f"https://www.themealdb.com/api/json/v1/1/filter.php?a={cuisine_name}", timeout=10)
+        recipes = r.json().get("meals", []) or []
     except Exception:
-        recipes = []
+        pass
 
-    # If fewer than 5 results, also search by ingredient name as fallback
     if len(recipes) < 5:
         try:
-            fallback_url = f"https://www.themealdb.com/api/json/v1/1/search.php?s={cuisine_name}"
-            fb = requests.get(fallback_url, timeout=10).json().get("meals", []) or []
-            # Merge without duplicates
-            existing_ids = {r["idMeal"] for r in recipes}
-            for meal in fb:
-                if meal["idMeal"] not in existing_ids:
-                    recipes.append(meal)
+            fb = requests.get(f"https://www.themealdb.com/api/json/v1/1/search.php?s={cuisine_name}", timeout=10).json().get("meals", []) or []
+            recipes = merge_unique(recipes, fb)
         except Exception:
             pass
 
+    # Boost with Spoonacular cuisine search
+    recipes = merge_unique(recipes, spoonacular_search(cuisine_name, number=20))
+
     return templates.TemplateResponse("results.html", {
-        "request": request,
-        "recipes": recipes,
-        "ingredient": cuisine_name,
-        "is_cuisine": True
+        "request": request, "recipes": recipes,
+        "ingredient": cuisine_name, "is_cuisine": True
     })
 
-# Browse by category
+
 @app.get("/category/{category_name}", response_class=HTMLResponse)
 def browse_category(request: Request, category_name: str):
-    # Special case: Non-Veg shows chicken + beef + seafood combined
     if category_name.lower() in ("non-veg", "nonveg", "non veg"):
         recipes = []
         seen_ids = set()
@@ -147,42 +241,50 @@ def browse_category(request: Request, category_name: str):
                         seen_ids.add(m["idMeal"])
             except Exception:
                 pass
-        return templates.TemplateResponse("results.html", {"request": request, "recipes": recipes, "ingredient": "Non-Veg"})
+        recipes = merge_unique(recipes, spoonacular_search("meat chicken beef", number=20))
+        return templates.TemplateResponse("results.html", {
+            "request": request, "recipes": recipes, "ingredient": "Non-Veg"
+        })
 
-    api_url = f"https://www.themealdb.com/api/json/v1/1/filter.php?c={category_name}"
+    recipes = []
     try:
-        response = requests.get(api_url, timeout=10)
-        response.raise_for_status()
-        recipes = response.json().get("meals", [])
-    except Exception as e:
-        recipes = []
-    return templates.TemplateResponse("results.html", {"request": request, "recipes": recipes, "ingredient": category_name})
+        r = requests.get(f"https://www.themealdb.com/api/json/v1/1/filter.php?c={category_name}", timeout=10)
+        recipes = r.json().get("meals", []) or []
+    except Exception:
+        pass
 
-# Recipe details
+    # Boost with Spoonacular
+    recipes = merge_unique(recipes, spoonacular_search(category_name, number=15))
+
+    return templates.TemplateResponse("results.html", {
+        "request": request, "recipes": recipes, "ingredient": category_name
+    })
+
+
 @app.get("/recipe/{recipe_id}", response_class=HTMLResponse)
 def recipe_detail(request: Request, recipe_id: str):
-    api_url = f"https://www.themealdb.com/api/json/v1/1/lookup.php?i={recipe_id}"
+    # Spoonacular recipe (id starts with "sp_")
+    if recipe_id.startswith("sp_"):
+        spoon_id = int(recipe_id[3:])
+        recipe = spoonacular_detail(spoon_id)
+        return templates.TemplateResponse("recipe.html", {"request": request, "recipe": recipe})
+
+    # MealDB recipe
     try:
-        response = requests.get(api_url, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-        recipe = data.get("meals", [None])[0]
-    except Exception as e:
+        r = requests.get(f"https://www.themealdb.com/api/json/v1/1/lookup.php?i={recipe_id}", timeout=10)
+        recipe = r.json().get("meals", [None])[0]
+    except Exception:
         recipe = None
     return templates.TemplateResponse("recipe.html", {"request": request, "recipe": recipe})
 
-# Random recipe
+
 @app.get("/random", response_class=HTMLResponse)
 def random_recipe(request: Request):
-    api_url = "https://www.themealdb.com/api/json/v1/1/random.php"
     try:
-        response = requests.get(api_url, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-        recipe = data.get("meals", [None])[0]
+        r = requests.get("https://www.themealdb.com/api/json/v1/1/random.php", timeout=10)
+        recipe = r.json().get("meals", [None])[0]
         if recipe:
-            recipe_id = recipe.get("idMeal")
             return templates.TemplateResponse("recipe.html", {"request": request, "recipe": recipe})
-    except Exception as e:
+    except Exception:
         pass
     return templates.TemplateResponse("recipe.html", {"request": request, "recipe": None})
