@@ -25,6 +25,18 @@ def search(request: Request, ingredient: str = Form(...)):
         recipes = []
     return templates.TemplateResponse("results.html", {"request": request, "recipes": recipes, "ingredient": ingredient})
 
+# Browse by cuisine
+@app.get("/cuisine/{cuisine_name}", response_class=HTMLResponse)
+def browse_cuisine(request: Request, cuisine_name: str):
+    api_url = f"https://www.themealdb.com/api/json/v1/1/filter.php?a={cuisine_name}"
+    try:
+        response = requests.get(api_url, timeout=10)
+        response.raise_for_status()
+        recipes = response.json().get("meals", [])
+    except Exception:
+        recipes = []
+    return templates.TemplateResponse("results.html", {"request": request, "recipes": recipes, "ingredient": cuisine_name})
+
 # Browse by category
 @app.get("/category/{category_name}", response_class=HTMLResponse)
 def browse_category(request: Request, category_name: str):

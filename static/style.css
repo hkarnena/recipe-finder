@@ -715,3 +715,89 @@ body.dark-mode .btn-secondary:hover {
   transform: translateY(-2px) !important;
   box-shadow: var(--shadow-lg) !important;
 }
+
+/* CUISINE SECTION */
+.cuisine-section {
+  background: linear-gradient(135deg, rgba(99,102,241,0.04) 0%, rgba(255,237,213,0.4) 100%);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 120px 2rem;
+}
+
+.cuisine-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.cuisine-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+}
+
+.cuisine-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.9);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem 1.5rem;
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  transition: all 0.25s;
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+.cuisine-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--cuisine-color, var(--primary-action));
+  border-radius: 4px 0 0 4px;
+  transition: width 0.25s;
+}
+
+.cuisine-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--cuisine-color, var(--primary-action));
+}
+
+.cuisine-card:hover::before {
+  width: 6px;
+}
+
+.cuisine-flag {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.cuisine-name {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: -0.01em;
+}
+
+.cuisine-desc {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+@media (max-width: 1024px) {
+  .cuisine-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 600px) {
+  .cuisine-grid { grid-template-columns: repeat(2, 1fr); }
+  .cuisine-section { padding: 60px 1.5rem; }
+}
