@@ -3,10 +3,50 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 import requests
+import re
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+def parse_instructions(text: str) -> list[str]:
+    """Split raw instruction text into clean numbered steps."""
+    if not text:
+        return []
+
+    # Split on newlines first
+    lines = [l.strip() for l in text.splitlines()]
+    lines = [l for l in lines if l]  # remove empty lines
+
+    steps = []
+    for line in lines:
+        # If a line is already short (a single step), keep it
+        # If it's a long paragraph, split on ". " sentence boundaries
+        if len(line) < 200:
+            # Strip leading step numbers like "1." "Step 1:" etc.
+            line = re.sub(r'^(step\s*)?\d+[\.\):\-]\s*', '', line, flags=re.IGNORECASE)
+            if line:
+                steps.append(line)
+        else:
+            # Split long paragraph into sentences
+            sentences = re.split(r'(?<=[.!?])\s+', line)
+            for s in sentences:
+                s = s.strip()
+                s = re.sub(r'^(step\s*)?\d+[\.\):\-]\s*', '', s, flags=re.IGNORECASE)
+                if s and len(s) > 10:
+                    steps.append(s)
+
+    # Deduplicate while preserving order
+    seen = set()
+    unique = []
+    for s in steps:
+        if s not in seen:
+            seen.add(s)
+            unique.append(s)
+
+    return unique
+
+templates.env.filters["parse_instructions"] = parse_instructions
 
 # Home page
 @app.get("/", response_class=HTMLResponse)
@@ -92,6 +132,21 @@ def browse_cuisine(request: Request, cuisine_name: str):
 # Browse by category
 @app.get("/category/{category_name}", response_class=HTMLResponse)
 def browse_category(request: Request, category_name: str):
+    # Special case: Non-Veg shows chicken + beef + seafood combined
+    if category_name.lower() in ("non-veg", "nonveg", "non veg"):
+        recipes = []
+        seen_ids = set()
+        for cat in ["Chicken", "Beef", "Seafood", "Lamb", "Pork"]:
+            try:
+                r = requests.get(f"https://www.themealdb.com/api/json/v1/1/filter.php?c={cat}", timeout=10)
+                for m in (r.json().get("meals") or []):
+                    if m["idMeal"] not in seen_ids:
+                        recipes.append(m)
+                        seen_ids.add(m["idMeal"])
+            except Exception:
+                pass
+        return templates.TemplateResponse("results.html", {"request": request, "recipes": recipes, "ingredient": "Non-Veg"})
+
     api_url = f"https://www.themealdb.com/api/json/v1/1/filter.php?c={category_name}"
     try:
         response = requests.get(api_url, timeout=10)

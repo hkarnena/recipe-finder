@@ -60,7 +60,28 @@
 
             <div class="recipe-section">
                 <h2>Instructions</h2>
-                <p class="instructions">{{ recipe.strInstructions }}</p>
+                {% if recipe.strInstructions and recipe.strInstructions.strip() %}
+                    {% set steps = recipe.strInstructions | parse_instructions %}
+                    {% if steps %}
+                        <ol class="instructions-list">
+                            {% for step in steps %}
+                                <li>{{ step }}</li>
+                            {% endfor %}
+                        </ol>
+                    {% else %}
+                        <p class="instructions">{{ recipe.strInstructions }}</p>
+                    {% endif %}
+                {% else %}
+                    <div class="no-instructions">
+                        <span>📋</span>
+                        <p>No written instructions available for this recipe.</p>
+                        {% if recipe.strYoutube %}
+                            <a href="{{ recipe.strYoutube }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="margin-top:1rem;">📺 Watch Video Tutorial</a>
+                        {% else %}
+                            <p style="font-size:0.85rem;margin-top:0.5rem;">Try searching for "{{ recipe.strMeal }}" on YouTube for a video guide.</p>
+                        {% endif %}
+                    </div>
+                {% endif %}
             </div>
 
         {% else %}

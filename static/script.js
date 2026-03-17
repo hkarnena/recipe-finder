@@ -31,8 +31,20 @@ function searchIngredient(ingredient) {
         input.value = ingredient;
         document.getElementById('searchForm').submit();
     } else {
-        // If on results page, redirect to home with search
         window.location.href = '/?search=' + encodeURIComponent(ingredient);
+    }
+}
+
+// Non-veg diet toggle: submit search for chicken (non-veg browse)
+function searchIngredientHref(event, ingredient) {
+    event.preventDefault();
+    const form = document.getElementById('searchForm');
+    const input = document.getElementById('ingredientInput');
+    if (form && input) {
+        input.value = ingredient;
+        form.submit();
+    } else {
+        window.location.href = '/search?ingredient=' + encodeURIComponent(ingredient);
     }
 }
 
