@@ -38,7 +38,7 @@
                 <button onclick="toggleFavorite('{{ recipe.idMeal }}', '{{ recipe.strMeal }}', '{{ recipe.strMealThumb }}')" class="btn btn-primary">
                     <span class="heart" id="heart-{{ recipe.idMeal }}">♡</span> Save Recipe
                 </button>
-                <button onclick="shareRecipe('{{ recipe.strMeal }}', '{{ recipe.idMeal }}')" class="btn btn-secondary">📤 Share</button>
+                <button onclick="shareRecipe('{{ recipe.strMeal }}', '{{ recipe.idMeal }}')" class="btn btn-outline">📤 Share</button>
                 <button onclick="printRecipe()" class="btn btn-outline">🖨️ Print</button>
                 {% if recipe.strYoutube %}
                 <a href="{{ recipe.strYoutube }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline">📺 Watch Video</a>
@@ -73,7 +73,7 @@
 
         <div class="action-buttons">
             <a href="/" class="btn btn-outline">← Back to Home</a>
-            <a href="/random" class="btn btn-secondary">🎲 Try Another</a>
+            <a href="/random" class="btn btn-outline">🎲 Try Another</a>
         </div>
     </div>
 

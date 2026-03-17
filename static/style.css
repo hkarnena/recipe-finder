@@ -679,3 +679,39 @@ body.dark-mode .recipe-section{background:rgba(30,41,59,0.7);}
 }
 
 @media print{.navbar,.action-buttons,.favorite-btn{display:none!important;}body{background:white;}}
+
+/* FIX: Ensure btn-secondary always has visible text */
+.btn-secondary{background:var(--primary-action);color:#ffffff!important;}
+.btn-secondary:hover{background:var(--primary-hover);transform:translateY(-2px);color:#ffffff!important;}
+
+/* FINAL FIX: btn-secondary always visible */
+.btn-secondary,
+body.dark-mode .btn-secondary{
+  background:var(--primary-action)!important;
+  color:#ffffff!important;
+  box-shadow:0 4px 14px rgba(99,102,241,0.25)!important;
+}
+.btn-secondary:hover,
+body.dark-mode .btn-secondary:hover{
+  background:var(--primary-hover)!important;
+  color:#ffffff!important;
+  transform:translateY(-2px);
+  box-shadow:0 6px 20px rgba(99,102,241,0.4)!important;
+}
+
+/* OVERRIDE: btn-secondary = white outlined button */
+.btn-secondary,
+body.dark-mode .btn-secondary {
+  background: #ffffff !important;
+  color: var(--text-main) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: var(--shadow) !important;
+}
+.btn-secondary:hover,
+body.dark-mode .btn-secondary:hover {
+  background: #ffffff !important;
+  color: var(--primary-action) !important;
+  border-color: var(--primary-action) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
