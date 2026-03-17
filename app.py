@@ -62,7 +62,7 @@ def spoonacular_search(query: str, number: int = 20) -> list[dict]:
             {
                 "idMeal": f"sp_{item['id']}",
                 "strMeal": item["title"],
-                "strMealThumb": item.get("image", ""),
+                "strMealThumb": item.get("image", "").replace("http://", "https://"),
                 "_source": "spoonacular",
                 "_spoon_id": item["id"],
             }
@@ -86,7 +86,7 @@ def spoonacular_by_ingredient(ingredient: str, number: int = 20) -> list[dict]:
             {
                 "idMeal": f"sp_{item['id']}",
                 "strMeal": item["title"],
-                "strMealThumb": item.get("image", ""),
+                "strMealThumb": item.get("image", "").replace("http://", "https://"),
                 "_source": "spoonacular",
                 "_spoon_id": item["id"],
             }
@@ -108,21 +108,31 @@ def spoonacular_detail(spoon_id: int) -> dict | None:
         )
         d = r.json()
 
-        # Build instructions from analyzed steps (cleaner than raw HTML)
+        # Image — use the larger detail image, ensure https
+        image = d.get("image", "")
+        if image.startswith("http://"):
+            image = image.replace("http://", "https://", 1)
+
+        # Instructions — prefer analyzed steps (clean text)
         instructions = ""
         analyzed = d.get("analyzedInstructions", [])
         if analyzed:
             steps = []
             for section in analyzed:
                 for step in section.get("steps", []):
-                    steps.append(step.get("step", ""))
-            instructions = "\n".join(steps)
-        if not instructions:
-            # Strip HTML tags from raw instructions as fallback
-            raw = d.get("instructions") or ""
-            instructions = re.sub(r'<[^>]+>', ' ', raw).strip()
+                    steps.append(step.get("step", "").strip())
+            instructions = "\n".join(s for s in steps if s)
 
-        # Category: use first dishType, capitalised
+        # Fallback: strip HTML from raw instructions
+        if not instructions:
+            raw = d.get("instructions") or ""
+            # Remove HTML tags
+            clean = re.sub(r'<[^>]+>', ' ', raw).strip()
+            # If what's left is just a URL or very short, treat as no instructions
+            if len(clean) > 30 and not clean.startswith("http"):
+                instructions = clean
+
+        # Category: first dishType capitalised
         dish_types = d.get("dishTypes", [])
         category = dish_types[0].title() if dish_types else "Recipe"
 
@@ -130,22 +140,25 @@ def spoonacular_detail(spoon_id: int) -> dict | None:
         cuisines = d.get("cuisines", [])
         area = cuisines[0] if cuisines else "International"
 
+        # Source URL for fallback link
+        source_url = d.get("sourceUrl", "")
+
         recipe = {
             "idMeal": f"sp_{d['id']}",
-            "strMeal": d.get("title", ""),          # Spoonacular titles are already proper case
-            "strMealThumb": d.get("image", ""),
+            "strMeal": d.get("title", "").title(),
+            "strMealThumb": image,
             "strCategory": category,
             "strArea": area,
             "strInstructions": instructions,
             "strYoutube": "",
-            "strSource": d.get("sourceUrl", ""),
+            "strSource": source_url,
+            "_no_instructions": not bool(instructions),
         }
 
-        # Ingredients — use original string for measure, name for ingredient
+        # Ingredients
         ingredients = d.get("extendedIngredients", [])
         for i, ing in enumerate(ingredients[:20], start=1):
             name = ing.get("name", "").strip()
-            # measure = everything in 'original' before the ingredient name
             original = ing.get("original", "")
             measure = original.replace(name, "").strip(" ,")
             recipe[f"strIngredient{i}"] = name
