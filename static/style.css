@@ -801,3 +801,85 @@ body.dark-mode .btn-secondary:hover {
   .cuisine-grid { grid-template-columns: repeat(2, 1fr); }
   .cuisine-section { padding: 60px 1.5rem; }
 }
+
+/* ===== CUISINE SECTION OVERRIDE ===== */
+.cuisine-section {
+  padding: 80px 2rem;
+  background: var(--bg-main);
+  border-top: 1px solid var(--border);
+}
+
+.cuisine-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.cuisine-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 1.25rem !important;
+  list-style: none !important;
+}
+
+.cuisine-card {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.3rem !important;
+  padding: 1.75rem 1.5rem !important;
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255,255,255,0.9) !important;
+  border-radius: var(--radius-lg) !important;
+  text-decoration: none !important;
+  box-shadow: var(--shadow) !important;
+  transition: all 0.25s !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.cuisine-card::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0; left: 0 !important;
+  width: 4px !important;
+  height: 100% !important;
+  background: var(--cuisine-color, var(--primary-action)) !important;
+}
+
+.cuisine-card:hover {
+  transform: translateY(-6px) !important;
+  box-shadow: var(--shadow-lg) !important;
+  border-color: var(--cuisine-color, var(--primary-action)) !important;
+}
+
+.cuisine-flag {
+  font-size: 2.2rem !important;
+  display: block !important;
+  margin-bottom: 0.5rem !important;
+  line-height: 1 !important;
+}
+
+.cuisine-name {
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  color: var(--text-main) !important;
+  letter-spacing: -0.01em !important;
+  display: block !important;
+}
+
+.cuisine-desc {
+  font-size: 0.8rem !important;
+  color: var(--text-muted) !important;
+  display: block !important;
+}
+
+@media (max-width: 1024px) {
+  .cuisine-grid { grid-template-columns: repeat(3, 1fr) !important; }
+}
+
+@media (max-width: 640px) {
+  .cuisine-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .cuisine-section { padding: 60px 1.5rem; }
+}
