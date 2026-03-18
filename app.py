@@ -47,14 +47,17 @@ templates.env.filters["parse_instructions"] = parse_instructions
 
 # ── Spoonacular helpers ───────────────────────────────────────────────────────
 
-def spoonacular_search(query: str, number: int = 20) -> list[dict]:
+def spoonacular_search(query: str, number: int = 20, cuisine: str = "") -> list[dict]:
     """Search Spoonacular and return results normalised to MealDB card shape."""
     if not SPOONACULAR_KEY:
         return []
     try:
+        params = {"query": query, "number": number, "apiKey": SPOONACULAR_KEY}
+        if cuisine:
+            params["cuisine"] = cuisine
         r = requests.get(
             "https://api.spoonacular.com/recipes/complexSearch",
-            params={"query": query, "number": number, "apiKey": SPOONACULAR_KEY},
+            params=params,
             timeout=10
         )
         results = r.json().get("results", [])
@@ -64,7 +67,6 @@ def spoonacular_search(query: str, number: int = 20) -> list[dict]:
                 "strMeal": item["title"],
                 "strMealThumb": item.get("image", "").replace("http://", "https://"),
                 "_source": "spoonacular",
-                "_spoon_id": item["id"],
             }
             for item in results
         ]
@@ -103,18 +105,21 @@ def spoonacular_detail(spoon_id: int) -> dict | None:
     try:
         r = requests.get(
             f"https://api.spoonacular.com/recipes/{spoon_id}/information",
-            params={"apiKey": SPOONACULAR_KEY},
+            params={"apiKey": SPOONACULAR_KEY, "includeNutrition": "false"},
             timeout=10
         )
         d = r.json()
 
-        # Image — use the larger detail image, ensure https
+        # Image — use 312x231 thumbnail (more reliable than 556x370)
         image = d.get("image", "")
-        if image.startswith("http://"):
-            image = image.replace("http://", "https://", 1)
+        if image:
+            # Normalise to https and use the smaller reliable size
+            image = image.replace("http://", "https://")
+            image = re.sub(r'-\d+x\d+\.', '-312x231.', image)
 
-        # Instructions — prefer analyzed steps (clean text)
+        # Instructions — prefer analyzed steps (clean text, no HTML)
         instructions = ""
+        source_link = ""  # link to external site if no instructions
         analyzed = d.get("analyzedInstructions", [])
         if analyzed:
             steps = []
@@ -123,25 +128,28 @@ def spoonacular_detail(spoon_id: int) -> dict | None:
                     steps.append(step.get("step", "").strip())
             instructions = "\n".join(s for s in steps if s)
 
-        # Fallback: strip HTML from raw instructions
+        # Fallback: extract URL from HTML instructions and use as source link
         if not instructions:
             raw = d.get("instructions") or ""
-            # Remove HTML tags
-            clean = re.sub(r'<[^>]+>', ' ', raw).strip()
-            # If what's left is just a URL or very short, treat as no instructions
-            if len(clean) > 30 and not clean.startswith("http"):
-                instructions = clean
+            # Try to pull href from anchor tag
+            href_match = re.search(r'href=["\']([^"\']+)["\']', raw)
+            if href_match:
+                source_link = href_match.group(1).replace("http://", "https://")
+            else:
+                # Strip HTML and check if there's real text
+                clean = re.sub(r'<[^>]+>', ' ', raw).strip()
+                if len(clean) > 30 and not clean.lower().startswith("instruction"):
+                    instructions = clean
 
-        # Category: first dishType capitalised
+        # Use sourceUrl as fallback link if we still have nothing
+        if not source_link and not instructions:
+            source_link = d.get("sourceUrl", "")
+
+        # Category and cuisine
         dish_types = d.get("dishTypes", [])
         category = dish_types[0].title() if dish_types else "Recipe"
-
-        # Area/cuisine
         cuisines = d.get("cuisines", [])
         area = cuisines[0] if cuisines else "International"
-
-        # Source URL for fallback link
-        source_url = d.get("sourceUrl", "")
 
         recipe = {
             "idMeal": f"sp_{d['id']}",
@@ -151,11 +159,10 @@ def spoonacular_detail(spoon_id: int) -> dict | None:
             "strArea": area,
             "strInstructions": instructions,
             "strYoutube": "",
-            "strSource": source_url,
-            "_no_instructions": not bool(instructions),
+            "strSource": source_link or d.get("sourceUrl", ""),
+            "_external_instructions": source_link,  # signals template to show link button
         }
 
-        # Ingredients
         ingredients = d.get("extendedIngredients", [])
         for i, ing in enumerate(ingredients[:20], start=1):
             name = ing.get("name", "").strip()
@@ -248,7 +255,19 @@ def browse_cuisine(request: Request, cuisine_name: str):
             pass
 
     # Boost with Spoonacular cuisine search
-    recipes = merge_unique(recipes, spoonacular_search(cuisine_name, number=20))
+    # For known cuisines, also pass cuisine filter for better results
+    cuisine_map = {
+        "italian": "Italian", "japanese": "Japanese", "mexican": "Mexican",
+        "indian": "Indian", "french": "French", "chinese": "Chinese",
+        "greek": "Greek", "american": "American", "thai": "Thai",
+        "british": "British", "moroccan": "African", "turkish": "Middle Eastern"
+    }
+    spoon_cuisine = cuisine_map.get(cuisine_name.lower(), "")
+    recipes = merge_unique(recipes, spoonacular_search(cuisine_name, number=20, cuisine=spoon_cuisine))
+    # Extra pass for Indian to get more dishes
+    if spoon_cuisine == "Indian":
+        for term in ["curry", "biryani", "masala", "dal", "paneer", "tandoori"]:
+            recipes = merge_unique(recipes, spoonacular_search(term, number=10, cuisine="Indian"))
 
     return templates.TemplateResponse("results.html", {
         "request": request, "recipes": recipes,

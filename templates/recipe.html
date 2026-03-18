@@ -74,13 +74,19 @@
                 {% else %}
                     <div class="no-instructions">
                         <span>📋</span>
-                        <p>No written instructions available for this recipe.</p>
-                        {% if recipe.strYoutube %}
+                        {% if recipe._external_instructions %}
+                            <p>The full instructions for this recipe are on an external site.</p>
+                            <a href="{{ recipe._external_instructions }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="margin-top:1rem;">
+                                🔗 View Full Instructions
+                            </a>
+                        {% elif recipe.strYoutube %}
+                            <p>No written instructions available for this recipe.</p>
                             <a href="{{ recipe.strYoutube }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="margin-top:1rem;">📺 Watch Video Tutorial</a>
                         {% elif recipe.strSource %}
+                            <p>No written instructions available for this recipe.</p>
                             <a href="{{ recipe.strSource }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="margin-top:1rem;">🔗 View Full Recipe on Source Site</a>
                         {% else %}
-                            <p style="font-size:0.85rem;margin-top:0.5rem;">Try searching for "{{ recipe.strMeal }}" on YouTube for a video guide.</p>
+                            <p>No instructions available. Try searching for "{{ recipe.strMeal }}" on YouTube.</p>
                         {% endif %}
                     </div>
                 {% endif %}
