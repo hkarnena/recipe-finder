@@ -6,6 +6,303 @@
     <title>Meal Planner - Recipe Finder</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍳</text></svg>">
     <link rel="stylesheet" href="/static/style.css">
+    <style>
+        /* ── Planner page overrides ── */
+        .planner-hero {
+            background: linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(255,237,213,0.55) 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 72px 2rem 56px;
+        }
+        .planner-hero-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 3rem;
+            flex-wrap: wrap;
+        }
+        .planner-title {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 3.2rem;
+            font-weight: 800;
+            color: var(--text-main);
+            letter-spacing: -0.02em;
+            line-height: 1.12;
+            margin: 1rem 0 0.75rem;
+        }
+        .planner-subtitle {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+            max-width: 460px;
+            line-height: 1.65;
+        }
+        .planner-hero-stats {
+            display: flex;
+            gap: 1.25rem;
+            flex-shrink: 0;
+        }
+        .planner-stat {
+            text-align: center;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.9);
+            border-radius: 20px;
+            padding: 1.4rem 1.75rem;
+            box-shadow: var(--shadow);
+            min-width: 95px;
+        }
+        .planner-stat-num {
+            display: block;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--primary-action);
+            letter-spacing: -0.02em;
+        }
+        .planner-stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-top: 0.2rem;
+            display: block;
+        }
+        /* Page */
+        .planner-page {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2.5rem 2rem 6rem;
+        }
+        .planner-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .planner-bar-label { font-size: 0.95rem; color: var(--text-muted); }
+        .planner-bar-label strong { color: var(--text-main); }
+        .planner-bar-right { display: flex; gap: 0.75rem; }
+        /* Day cards */
+        .planner-days {
+            display: grid !important;
+            grid-template-columns: repeat(7, 1fr) !important;
+            gap: 0.85rem !important;
+            margin-bottom: 3.5rem !important;
+        }
+        .planner-day-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.9);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+        .planner-day-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+        .planner-day-header {
+            padding: 0.8rem 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            background: rgba(255,255,255,0.35);
+        }
+        .planner-day-header.today {
+            background: rgba(99,102,241,0.1);
+            border-bottom-color: rgba(99,102,241,0.25);
+        }
+        .planner-day-name {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+        .today-badge {
+            font-size: 0.6rem;
+            font-weight: 700;
+            background: var(--primary-action);
+            color: white;
+            padding: 0.18rem 0.45rem;
+            border-radius: 20px;
+        }
+        .planner-meals { display: flex; flex-direction: column; }
+        .planner-meal-slot {
+            padding: 0.65rem 0.75rem;
+            border-bottom: 1px solid rgba(226,232,240,0.4);
+            cursor: pointer;
+            transition: background 0.15s;
+            position: relative;
+            min-height: 78px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+        .planner-meal-slot:last-child { border-bottom: none; }
+        .planner-meal-slot.empty:hover { background: rgba(99,102,241,0.05); }
+        .planner-meal-slot.filled { background: rgba(255,255,255,0.25); }
+        .planner-meal-slot.filled:hover { background: rgba(99,102,241,0.04); }
+        .meal-slot-label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+        }
+        .meal-slot-add {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            gap: 0.15rem;
+            padding: 0.4rem 0;
+        }
+        .meal-slot-plus {
+            font-size: 1.5rem;
+            line-height: 1;
+            color: #cbd5e1;
+            transition: color 0.2s;
+        }
+        .planner-meal-slot.empty:hover .meal-slot-plus { color: var(--primary-action); }
+        .planner-meal-slot img {
+            width: 100%;
+            height: 55px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        .meal-slot-name {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-main);
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .planner-remove {
+            position: absolute;
+            top: 5px; right: 5px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 17px; height: 17px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.15s;
+            z-index: 2;
+        }
+        .planner-meal-slot.filled:hover .planner-remove { opacity: 1; }
+        /* Picker */
+        .planner-picker-section {
+            border-top: 1px solid var(--border);
+            padding-top: 2.5rem;
+        }
+        .planner-picker-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1.75rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .planner-picker-header h2 {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+            letter-spacing: -0.01em;
+            margin-bottom: 0.3rem;
+        }
+        .planner-picker-header p { color: var(--text-muted); font-size: 0.9rem; }
+        .planner-picker-grid {
+            display: grid !important;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important;
+            gap: 1rem !important;
+        }
+        .planner-pick-card {
+            border-radius: 16px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid var(--border);
+            background: var(--glass-bg);
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .planner-pick-card:hover {
+            border-color: var(--primary-action);
+            transform: translateY(-3px);
+            box-shadow: var(--shadow);
+        }
+        .planner-pick-card.selected {
+            border-color: var(--primary-action);
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.2);
+        }
+        .planner-pick-img-wrap { position: relative; }
+        .planner-pick-img-wrap img {
+            width: 100%;
+            height: 85px;
+            object-fit: cover;
+            display: block;
+        }
+        .pick-selected-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(99,102,241,0.78);
+            color: white;
+            font-weight: 700;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .planner-pick-name {
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--text-main);
+            padding: 0.55rem 0.5rem;
+            line-height: 1.3;
+        }
+        .planner-empty-favs {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+            grid-column: 1 / -1;
+        }
+        .planner-empty-favs span { font-size: 3rem; display: block; margin-bottom: 0.75rem; }
+        /* Dark mode */
+        body.dark-mode .planner-day-header { background: rgba(30,41,59,0.5); }
+        body.dark-mode .planner-day-header.today { background: rgba(99,102,241,0.18); }
+        body.dark-mode .planner-meal-slot.filled { background: rgba(30,41,59,0.35); }
+        body.dark-mode .planner-stat { border-color: rgba(255,255,255,0.08); }
+        /* Responsive */
+        @media (max-width: 1100px) {
+            .planner-days { grid-template-columns: repeat(4, 1fr) !important; }
+        }
+        @media (max-width: 720px) {
+            .planner-days { grid-template-columns: repeat(2, 1fr) !important; }
+            .planner-title { font-size: 2.2rem; }
+            .planner-hero-stats { gap: 0.75rem; }
+        }
+        @media (max-width: 420px) {
+            .planner-days { grid-template-columns: 1fr !important; }
+        }
+        @media print {
+            .navbar, .planner-picker-section, .planner-bar-right { display: none !important; }
+            .planner-days { grid-template-columns: repeat(7, 1fr) !important; }
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar">
@@ -17,21 +314,20 @@
                 <li><a href="/planner">📅 Meal Planner</a></li>
                 <li><a href="#" onclick="showFavorites(); return false;">Favorites (<span id="favCount">0</span>)</a></li>
                 <li><a href="#" onclick="showFavorites(); return false;" class="nav-cta">My Saved Recipes</a></li>
-                <li><button class="theme-toggle" onclick="toggleTheme()"><span class="theme-icon">��</span></button></li>
+                <li><button class="theme-toggle" onclick="toggleTheme()"><span class="theme-icon">🌙</span></button></li>
             </ul>
         </div>
     </nav>
 
-    <!-- Planner Hero -->
     <div class="planner-hero">
         <div class="planner-hero-inner">
             <div>
                 <div class="hero-eyebrow">📅 Weekly Planner</div>
                 <h1 class="planner-title">Plan your week,<br><span class="highlight">eat better every day</span></h1>
-                <p class="planner-subtitle">Select a recipe from your saved list, then click any meal slot to fill it in.</p>
+                <p class="planner-subtitle">Select a recipe from your saved list below, then click any meal slot to fill it in.</p>
             </div>
             <div class="planner-hero-stats">
-                <div class="planner-stat" id="statFilled">
+                <div class="planner-stat">
                     <span class="planner-stat-num" id="filledCount">0</span>
                     <span class="planner-stat-label">Meals planned</span>
                 </div>
@@ -48,33 +344,26 @@
     </div>
 
     <div class="planner-page">
-
-        <!-- Action bar -->
         <div class="planner-bar">
-            <div class="planner-bar-left">
-                <span class="planner-bar-label">Week of <strong id="weekLabel"></strong></span>
-            </div>
+            <span class="planner-bar-label">Week of <strong id="weekLabel"></strong></span>
             <div class="planner-bar-right">
                 <button class="btn btn-outline" onclick="clearPlanner()">🗑️ Clear All</button>
                 <button class="btn btn-outline" onclick="window.print()">🖨️ Print</button>
             </div>
         </div>
 
-        <!-- Day cards grid -->
         <div class="planner-days" id="plannerDays"></div>
 
-        <!-- Saved recipes picker -->
         <div class="planner-picker-section">
             <div class="planner-picker-header">
                 <div>
                     <h2>Your Saved Recipes</h2>
-                    <p>Click a recipe to select it, then click a meal slot above</p>
+                    <p>Click a recipe to select it, then click a meal slot above to place it</p>
                 </div>
                 <a href="/" class="btn btn-outline" style="white-space:nowrap">+ Find More Recipes</a>
             </div>
             <div class="planner-picker-grid" id="plannerFavList"></div>
         </div>
-
     </div>
 
     <div id="favoritesModal" class="modal">
@@ -104,8 +393,8 @@
             const mon = new Date(now);
             mon.setDate(now.getDate() - ((now.getDay() + 6) % 7));
             const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
-            const fmt = d => d.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
-            return `${fmt(mon)} – ${fmt(sun)}`;
+            const fmt = d => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+            return fmt(mon) + ' - ' + fmt(sun);
         }
 
         function updateStats() {
@@ -120,42 +409,38 @@
             const plan = getPlan();
             const container = document.getElementById('plannerDays');
             container.innerHTML = '';
+            const todayName = new Date().toLocaleDateString('en-GB', { weekday: 'long' });
 
-            DAYS.forEach((day, di) => {
+            DAYS.forEach(function(day, di) {
                 const card = document.createElement('div');
                 card.className = 'planner-day-card';
+                const isToday = todayName === day;
 
-                const isToday = new Date().toLocaleDateString('en-GB', {weekday:'long'}) === day;
-                card.innerHTML = `
-                    <div class="planner-day-header ${isToday ? 'today' : ''}">
-                        <span class="planner-day-name">${DAY_SHORT[di]}</span>
-                        ${isToday ? '<span class="today-badge">Today</span>' : ''}
-                    </div>
-                    <div class="planner-meals">
-                        ${MEALS.map(meal => {
-                            const key = `${day}_${meal.key}`;
-                            const recipe = plan[key];
-                            if (recipe) {
-                                return `
-                                <div class="planner-meal-slot filled" data-key="${key}" onclick="handleSlotClick('${key}')">
-                                    <div class="meal-slot-label" style="color:${meal.color}">${meal.icon} ${meal.key}</div>
-                                    <img src="${recipe.image}" alt="${recipe.name}">
-                                    <span class="meal-slot-name">${recipe.name}</span>
-                                    <button class="planner-remove" onclick="removeFromPlan(event,'${key}')">×</button>
-                                </div>`;
-                            } else {
-                                return `
-                                <div class="planner-meal-slot empty" data-key="${key}" onclick="handleSlotClick('${key}')">
-                                    <div class="meal-slot-label" style="color:${meal.color}">${meal.icon} ${meal.key}</div>
-                                    <div class="meal-slot-add">
-                                        <span class="meal-slot-plus">+</span>
-                                        <span>Add meal</span>
-                                    </div>
-                                </div>`;
-                            }
-                        }).join('')}
-                    </div>
-                `;
+                let mealsHtml = MEALS.map(function(meal) {
+                    const key = day + '_' + meal.key;
+                    const recipe = plan[key];
+                    if (recipe) {
+                        return '<div class="planner-meal-slot filled" data-key="' + key + '" onclick="handleSlotClick(\'' + key + '\')">' +
+                            '<div class="meal-slot-label" style="color:' + meal.color + '">' + meal.icon + ' ' + meal.key + '</div>' +
+                            '<img src="' + recipe.image + '" alt="' + recipe.name + '">' +
+                            '<span class="meal-slot-name">' + recipe.name + '</span>' +
+                            '<button class="planner-remove" onclick="removeFromPlan(event,\'' + key + '\')">×</button>' +
+                            '</div>';
+                    } else {
+                        return '<div class="planner-meal-slot empty" data-key="' + key + '" onclick="handleSlotClick(\'' + key + '\')">' +
+                            '<div class="meal-slot-label" style="color:' + meal.color + '">' + meal.icon + ' ' + meal.key + '</div>' +
+                            '<div class="meal-slot-add"><span class="meal-slot-plus">+</span><span>Add meal</span></div>' +
+                            '</div>';
+                    }
+                }).join('');
+
+                card.innerHTML =
+                    '<div class="planner-day-header' + (isToday ? ' today' : '') + '">' +
+                        '<span class="planner-day-name">' + DAY_SHORT[di] + '</span>' +
+                        (isToday ? '<span class="today-badge">Today</span>' : '') +
+                    '</div>' +
+                    '<div class="planner-meals">' + mealsHtml + '</div>';
+
                 container.appendChild(card);
             });
             updateStats();
@@ -164,37 +449,34 @@
         function renderFavorites() {
             const favs = getFavorites();
             const list = document.getElementById('plannerFavList');
-            if (Object.keys(favs).length === 0) {
-                list.innerHTML = `
-                    <div class="planner-empty-favs">
-                        <span>��️</span>
-                        <p>No saved recipes yet.</p>
-                        <a href="/" class="btn btn-primary" style="margin-top:1rem;">Browse Recipes</a>
-                    </div>`;
+            const entries = Object.entries(favs);
+            if (entries.length === 0) {
+                list.innerHTML = '<div class="planner-empty-favs"><span>🍽️</span><p>No saved recipes yet.</p><a href="/" class="btn btn-primary" style="margin-top:1rem;display:inline-block;">Browse Recipes</a></div>';
                 return;
             }
-            list.innerHTML = Object.entries(favs).map(([id, r]) => `
-                <div class="planner-pick-card ${selectedRecipe && selectedRecipe.id === id ? 'selected' : ''}"
-                     onclick="selectRecipe('${id}','${r.name.replace(/'/g,"\\'").replace(/"/g,'&quot;')}','${r.image}')">
-                    <div class="planner-pick-img-wrap">
-                        <img src="${r.image}" alt="${r.name}" loading="lazy">
-                        ${selectedRecipe && selectedRecipe.id === id ? '<div class="pick-selected-overlay">✓ Selected</div>' : ''}
-                    </div>
-                    <span class="planner-pick-name">${r.name}</span>
-                </div>
-            `).join('');
+            list.innerHTML = entries.map(function(entry) {
+                const id = entry[0], r = entry[1];
+                const isSel = selectedRecipe && selectedRecipe.id === id;
+                const safeName = r.name.replace(/'/g, "&#39;").replace(/"/g, '&quot;');
+                return '<div class="planner-pick-card' + (isSel ? ' selected' : '') + '" onclick="selectRecipe(\'' + id + '\',\'' + safeName + '\',\'' + r.image + '\')">' +
+                    '<div class="planner-pick-img-wrap">' +
+                        '<img src="' + r.image + '" alt="' + safeName + '" loading="lazy">' +
+                        (isSel ? '<div class="pick-selected-overlay">✓ Selected</div>' : '') +
+                    '</div>' +
+                    '<span class="planner-pick-name">' + r.name + '</span>' +
+                    '</div>';
+            }).join('');
         }
 
         function selectRecipe(id, name, image) {
-            selectedRecipe = { id, name, image };
+            selectedRecipe = { id: id, name: name, image: image };
             renderFavorites();
-            showNotification(`"${name}" selected — click a meal slot`, 'add');
+            showNotification('"' + name + '" selected — click a meal slot', 'add');
         }
 
         function handleSlotClick(key) {
             if (!selectedRecipe) {
                 showNotification('Select a recipe from below first', 'remove');
-                // Scroll to picker
                 document.getElementById('plannerFavList').scrollIntoView({ behavior: 'smooth', block: 'center' });
                 return;
             }
@@ -223,7 +505,7 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', function() {
             loadTheme();
             updateFavoriteCount();
             document.getElementById('weekLabel').textContent = getWeekLabel();
