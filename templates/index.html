@@ -15,6 +15,7 @@
             <ul class="nav-links">
                 <li><a href="/">Home</a></li>
                 <li><a href="/random">Random</a></li>
+                <li><a href="/planner">📅 Meal Planner</a></li>
                 <li><a href="#" onclick="showFavorites(); return false;">Favorites (<span id="favCount">0</span>)</a></li>
                 <li><a href="#" onclick="showFavorites(); return false;" class="nav-cta">My Saved Recipes</a></li>
                 <li><button class="theme-toggle" onclick="toggleTheme()"><span class="theme-icon">🌙</span></button></li>
@@ -135,6 +136,29 @@
                 <span class="category-name">Chicken</span>
             </a>
         </div>
+    </div>
+
+    <!-- What's in my fridge -->
+    <div class="section fridge-section">
+        <div class="section-header">
+            <h2>🧊 What's in my fridge?</h2>
+            <span style="font-size:0.85rem;color:var(--text-muted);">Enter what you have, we'll find recipes</span>
+        </div>
+        <form action="/fridge" method="post" class="fridge-form" id="fridgeForm">
+            <div class="fridge-input-wrap">
+                <input type="text" name="ingredients" id="fridgeInput"
+                    placeholder="e.g. chicken, garlic, tomato, onion..."
+                    required>
+                <button type="submit">Find Recipes</button>
+            </div>
+            <div class="fridge-tags">
+                <span>Common combos:</span>
+                <button type="button" class="tag" onclick="setFridge('chicken, garlic, onion')">🍗 Chicken + Garlic</button>
+                <button type="button" class="tag" onclick="setFridge('eggs, cheese, butter')">🥚 Eggs + Cheese</button>
+                <button type="button" class="tag" onclick="setFridge('pasta, tomato, basil')">🍝 Pasta + Tomato</button>
+                <button type="button" class="tag" onclick="setFridge('rice, lentils, spices')">🍚 Rice + Lentils</button>
+            </div>
+        </form>
     </div>
 
     <!-- Cuisines -->

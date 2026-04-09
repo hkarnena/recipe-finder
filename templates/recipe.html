@@ -40,6 +40,7 @@
                 </button>
                 <button onclick="shareRecipe('{{ recipe.strMeal }}', '{{ recipe.idMeal }}')" class="btn btn-outline">📤 Share</button>
                 <button onclick="printRecipe()" class="btn btn-outline">🖨️ Print</button>
+                <button onclick="addToMealPlan('{{ recipe.idMeal }}', '{{ recipe.strMeal }}', '{{ recipe.strMealThumb }}')" class="btn btn-outline">📅 Add to Meal Plan</button>
                 {% if recipe.strYoutube %}
                 <a href="{{ recipe.strYoutube }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline">📺 Watch Video</a>
                 {% endif %}
@@ -76,9 +77,7 @@
                         <span>📋</span>
                         {% if recipe._external_instructions %}
                             <p>The full instructions for this recipe are on an external site.</p>
-                            <a href="{{ recipe._external_instructions }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="margin-top:1rem;">
-                                🔗 View Full Instructions
-                            </a>
+                            <a href="{{ recipe._external_instructions }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="margin-top:1rem;">🔗 View Full Instructions</a>
                         {% elif recipe.strYoutube %}
                             <p>No written instructions available for this recipe.</p>
                             <a href="{{ recipe.strYoutube }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="margin-top:1rem;">📺 Watch Video Tutorial</a>
@@ -91,6 +90,68 @@
                     </div>
                 {% endif %}
             </div>
+
+            <!-- Nutrition Card (Spoonacular recipes only) -->
+            {% if nutrition %}
+            <div class="recipe-section nutrition-section">
+                <h2>Nutrition per serving</h2>
+                <div class="nutrition-grid">
+                    <div class="nutrition-item">
+                        <span class="nutrition-value">{{ nutrition.calories }}</span>
+                        <span class="nutrition-label">Calories</span>
+                    </div>
+                    <div class="nutrition-item">
+                        <span class="nutrition-value">{{ nutrition.protein }}</span>
+                        <span class="nutrition-label">Protein</span>
+                    </div>
+                    <div class="nutrition-item">
+                        <span class="nutrition-value">{{ nutrition.carbs }}</span>
+                        <span class="nutrition-label">Carbs</span>
+                    </div>
+                    <div class="nutrition-item">
+                        <span class="nutrition-value">{{ nutrition.fat }}</span>
+                        <span class="nutrition-label">Fat</span>
+                    </div>
+                    <div class="nutrition-item">
+                        <span class="nutrition-value">{{ nutrition.fiber }}</span>
+                        <span class="nutrition-label">Fiber</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Rating & Notes -->
+            <div class="recipe-section">
+                <h2>My Rating & Notes</h2>
+                <div class="rating-row">
+                    <div class="star-rating" id="starRating">
+                        {% for i in range(1, 6) %}
+                        <span class="star" data-value="{{ i }}" onclick="setRating('{{ recipe.idMeal }}', {{ i }})">★</span>
+                        {% endfor %}
+                    </div>
+                    <span class="rating-label" id="ratingLabel">Tap to rate</span>
+                </div>
+                <textarea id="recipeNote" class="recipe-note-input"
+                    placeholder="Add a personal note... (e.g. 'Add extra chilli', 'Great for meal prep')"
+                    oninput="saveNote('{{ recipe.idMeal }}', this.value)"></textarea>
+            </div>
+
+            <!-- Similar Recipes -->
+            {% if similar %}
+            <div class="similar-section">
+                <h2>You might also like</h2>
+                <div class="similar-grid">
+                    {% for s in similar %}
+                    <a href="/recipe/{{ s.idMeal }}" class="similar-card">
+                        <img src="{{ s.strMealThumb }}" alt="{{ s.strMeal }}" loading="lazy">
+                        <div class="similar-card-info">
+                            <span>{{ s.strMeal }}</span>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
 
         {% else %}
             <div class="error-message">
@@ -119,6 +180,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             updateFavoriteButtons();
             updateFavoriteCount();
+            loadRatingAndNote('{{ recipe.idMeal if recipe else "" }}');
         });
     </script>
 </body>

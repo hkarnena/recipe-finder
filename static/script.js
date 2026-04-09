@@ -1,30 +1,37 @@
-// Filter cuisine cards by search input
+// ── Page transition ───────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    document.body.classList.add('page-loaded');
+});
+document.addEventListener('click', e => {
+    const a = e.target.closest('a');
+    if (a && a.href && !a.href.startsWith('#') && !a.target && a.origin === location.origin) {
+        e.preventDefault();
+        document.body.classList.remove('page-loaded');
+        setTimeout(() => { location.href = a.href; }, 220);
+    }
+});
+
+// ── Cuisine filter ────────────────────────────────────────────────────────────
 function filterCuisines(query) {
-    const cards = document.querySelectorAll('#cuisineGrid .cuisine-card');
     const q = query.toLowerCase();
-    cards.forEach(card => {
+    document.querySelectorAll('#cuisineGrid .cuisine-card').forEach(card => {
         const name = card.querySelector('.cuisine-name').textContent.toLowerCase();
         card.style.display = name.includes(q) ? '' : 'none';
     });
 }
 
-// Show loading spinner on form submit
-document.addEventListener('DOMContentLoaded', function() {
-    const searchForm = document.getElementById('searchForm');
-    const loadingSpinner = document.getElementById('loadingSpinner');
-    
-    if (searchForm && loadingSpinner) {
-        searchForm.addEventListener('submit', function() {
-            loadingSpinner.style.display = 'flex';
-        });
+// ── Loading spinner ───────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('searchForm');
+    const spinner = document.getElementById('loadingSpinner');
+    if (form && spinner) {
+        form.addEventListener('submit', () => { spinner.style.display = 'flex'; });
     }
-    
-    // Initialize favorites
     updateFavoriteButtons();
     updateFavoriteCount();
 });
 
-// Quick search function for tags
+// ── Search helpers ────────────────────────────────────────────────────────────
 function searchIngredient(ingredient) {
     const input = document.getElementById('ingredientInput');
     if (input) {
@@ -35,186 +42,200 @@ function searchIngredient(ingredient) {
     }
 }
 
-// Non-veg diet toggle: submit search for chicken (non-veg browse)
-function searchIngredientHref(event, ingredient) {
-    event.preventDefault();
-    const form = document.getElementById('searchForm');
-    const input = document.getElementById('ingredientInput');
-    if (form && input) {
-        input.value = ingredient;
-        form.submit();
-    } else {
-        window.location.href = '/search?ingredient=' + encodeURIComponent(ingredient);
-    }
+function setFridge(ingredients) {
+    const input = document.getElementById('fridgeInput');
+    if (input) input.value = ingredients;
 }
 
-// Favorites System using localStorage
+// ── Favorites ─────────────────────────────────────────────────────────────────
 function getFavorites() {
-    const favorites = localStorage.getItem('favorites');
-    return favorites ? JSON.parse(favorites) : {};
+    return JSON.parse(localStorage.getItem('favorites') || '{}');
 }
-
-function saveFavorites(favorites) {
-    localStorage.setItem('favorites', JSON.stringify(favorites));
+function saveFavorites(f) {
+    localStorage.setItem('favorites', JSON.stringify(f));
 }
 
 function toggleFavorite(recipeId, recipeName, recipeImage) {
-    const favorites = getFavorites();
-    
-    if (favorites[recipeId]) {
-        // Remove from favorites
-        delete favorites[recipeId];
+    const favs = getFavorites();
+    if (favs[recipeId]) {
+        delete favs[recipeId];
         showNotification('Removed from favorites!', 'remove');
     } else {
-        // Add to favorites
-        favorites[recipeId] = {
-            name: recipeName,
-            image: recipeImage
-        };
+        favs[recipeId] = { name: recipeName, image: recipeImage };
         showNotification('Added to favorites!', 'add');
     }
-    
-    saveFavorites(favorites);
+    saveFavorites(favs);
     updateFavoriteButtons();
     updateFavoriteCount();
 }
 
 function updateFavoriteButtons() {
-    const favorites = getFavorites();
-    
-    // Update all heart buttons
+    const favs = getFavorites();
     document.querySelectorAll('.heart').forEach(heart => {
-        const recipeId = heart.id.replace('heart-', '');
-        if (favorites[recipeId]) {
-            heart.textContent = '❤';
-            heart.classList.add('favorited');
-        } else {
-            heart.textContent = '♡';
-            heart.classList.remove('favorited');
-        }
+        const id = heart.id.replace('heart-', '');
+        heart.textContent = favs[id] ? '❤' : '♡';
+        heart.classList.toggle('favorited', !!favs[id]);
     });
 }
 
 function updateFavoriteCount() {
-    const favorites = getFavorites();
-    const count = Object.keys(favorites).length;
-    const countElements = document.querySelectorAll('#favCount');
-    countElements.forEach(el => {
-        el.textContent = count;
-    });
+    const count = Object.keys(getFavorites()).length;
+    document.querySelectorAll('#favCount').forEach(el => el.textContent = count);
 }
 
 function showFavorites() {
-    const favorites = getFavorites();
-    const modal = document.getElementById('favoritesModal');
-    const favoritesList = document.getElementById('favoritesList');
-    
-    if (Object.keys(favorites).length === 0) {
-        favoritesList.innerHTML = '<p class="no-favorites">No favorites yet! Start adding recipes you love.</p>';
+    const favs = getFavorites();
+    const list = document.getElementById('favoritesList');
+    if (Object.keys(favs).length === 0) {
+        list.innerHTML = '<p class="no-favorites">No favorites yet! Start adding recipes you love.</p>';
     } else {
-        let html = '';
-        for (const [id, recipe] of Object.entries(favorites)) {
-            html += `
-                <div class="recipe-card">
-                    <button class="favorite-btn" onclick="toggleFavorite('${id}', '${recipe.name}', '${recipe.image}')" aria-label="Remove from favorites">
-                        <span class="heart favorited" id="heart-${id}">❤</span>
-                    </button>
-                    <img src="${recipe.image}" alt="${recipe.name}" loading="lazy">
-                    <h3>${recipe.name}</h3>
-                    <a href="/recipe/${id}" class="btn-view">View Recipe</a>
+        list.innerHTML = Object.entries(favs).map(([id, r]) => `
+            <div class="recipe-card">
+                <button class="favorite-btn" onclick="toggleFavorite('${id}','${r.name}','${r.image}')" aria-label="Remove">
+                    <span class="heart favorited" id="heart-${id}">❤</span>
+                </button>
+                <img src="${r.image}" alt="${r.name}" loading="lazy">
+                <div class="recipe-content">
+                    <h3 class="recipe-title">${r.name}</h3>
+                    <a href="/recipe/${id}" class="recipe-btn">View Recipe →</a>
                 </div>
-            `;
-        }
-        favoritesList.innerHTML = html;
+            </div>
+        `).join('');
     }
-    
-    modal.style.display = 'block';
+    document.getElementById('favoritesModal').style.display = 'block';
 }
 
 function closeFavorites() {
-    const modal = document.getElementById('favoritesModal');
-    modal.style.display = 'none';
+    document.getElementById('favoritesModal').style.display = 'none';
 }
 
-// Close modal when clicking outside
-window.onclick = function(event) {
-    const modal = document.getElementById('favoritesModal');
-    if (event.target == modal) {
-        modal.style.display = 'none';
+window.onclick = e => {
+    const m = document.getElementById('favoritesModal');
+    if (e.target === m) m.style.display = 'none';
+};
+
+// ── Rating & Notes ────────────────────────────────────────────────────────────
+function getRatings() {
+    return JSON.parse(localStorage.getItem('recipeRatings') || '{}');
+}
+
+function setRating(recipeId, value) {
+    const ratings = getRatings();
+    ratings[recipeId] = { ...ratings[recipeId], stars: value };
+    localStorage.setItem('recipeRatings', JSON.stringify(ratings));
+    renderStars(recipeId, value);
+    showNotification(`Rated ${value} star${value > 1 ? 's' : ''}!`, 'add');
+}
+
+function saveNote(recipeId, text) {
+    const ratings = getRatings();
+    ratings[recipeId] = { ...ratings[recipeId], note: text };
+    localStorage.setItem('recipeRatings', JSON.stringify(ratings));
+}
+
+function renderStars(recipeId, value) {
+    const stars = document.querySelectorAll('#starRating .star');
+    stars.forEach((s, i) => {
+        s.classList.toggle('active', i < value);
+    });
+    const label = document.getElementById('ratingLabel');
+    if (label) label.textContent = value ? `${value} / 5` : 'Tap to rate';
+}
+
+function loadRatingAndNote(recipeId) {
+    if (!recipeId) return;
+    const data = getRatings()[recipeId];
+    if (!data) return;
+    if (data.stars) renderStars(recipeId, data.stars);
+    if (data.note) {
+        const ta = document.getElementById('recipeNote');
+        if (ta) ta.value = data.note;
     }
 }
 
-// Notification system
+// ── Meal Planner ──────────────────────────────────────────────────────────────
+function addToMealPlan(id, name, image) {
+    // Show a quick day/meal picker modal
+    let modal = document.getElementById('plannerPickModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'plannerPickModal';
+        modal.className = 'share-modal';
+        document.body.appendChild(modal);
+    }
+    const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+    const meals = ['Breakfast','Lunch','Dinner'];
+    modal.innerHTML = `
+        <div class="share-modal-content">
+            <span class="close" onclick="document.getElementById('plannerPickModal').style.display='none'">&times;</span>
+            <h3>📅 Add to Meal Plan</h3>
+            <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:1rem;">Choose a day and meal slot</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+                ${days.map(d => meals.map(m => `
+                    <button class="diet-btn" style="text-align:left;border-radius:8px;"
+                        onclick="confirmAddToPlan('${id}','${name.replace(/'/g,"\\'")}','${image}','${d}','${m}')">
+                        <strong>${d}</strong> · ${m}
+                    </button>
+                `).join('')).join('')}
+            </div>
+        </div>
+    `;
+    modal.style.display = 'block';
+}
+
+function confirmAddToPlan(id, name, image, day, meal) {
+    const plan = JSON.parse(localStorage.getItem('mealPlan') || '{}');
+    plan[`${day}_${meal}`] = { id, name, image };
+    localStorage.setItem('mealPlan', JSON.stringify(plan));
+    document.getElementById('plannerPickModal').style.display = 'none';
+    showNotification(`Added to ${day} ${meal}!`, 'add');
+}
+
+// ── Notification ──────────────────────────────────────────────────────────────
 function showNotification(message, type) {
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.textContent = message;
-    document.body.appendChild(notification);
-    
+    const n = document.createElement('div');
+    n.className = `notification ${type}`;
+    n.textContent = message;
+    document.body.appendChild(n);
+    setTimeout(() => n.classList.add('show'), 10);
     setTimeout(() => {
-        notification.classList.add('show');
-    }, 10);
-    
-    setTimeout(() => {
-        notification.classList.remove('show');
-        setTimeout(() => {
-            notification.remove();
-        }, 300);
-    }, 2000);
+        n.classList.remove('show');
+        setTimeout(() => n.remove(), 300);
+    }, 2200);
 }
 
-// Dark Mode Toggle
+// ── Dark Mode ─────────────────────────────────────────────────────────────────
 function toggleTheme() {
-    const body = document.body;
-    const themeIcon = document.querySelector('.theme-icon');
-    
-    body.classList.toggle('dark-mode');
-    
-    if (body.classList.contains('dark-mode')) {
-        themeIcon.textContent = '☀️';
-        localStorage.setItem('theme', 'dark');
-    } else {
-        themeIcon.textContent = '🌙';
-        localStorage.setItem('theme', 'light');
-    }
+    document.body.classList.toggle('dark-mode');
+    const icon = document.querySelector('.theme-icon');
+    const isDark = document.body.classList.contains('dark-mode');
+    if (icon) icon.textContent = isDark ? '☀️' : '🌙';
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
 }
 
-// Load saved theme on page load
 function loadTheme() {
-    const savedTheme = localStorage.getItem('theme');
-    const themeIcon = document.querySelector('.theme-icon');
-    
-    if (savedTheme === 'dark') {
+    if (localStorage.getItem('theme') === 'dark') {
         document.body.classList.add('dark-mode');
-        if (themeIcon) themeIcon.textContent = '☀️';
+        const icon = document.querySelector('.theme-icon');
+        if (icon) icon.textContent = '☀️';
     }
 }
 
-// Print Recipe
-function printRecipe() {
-    window.print();
-}
+// ── Print ─────────────────────────────────────────────────────────────────────
+function printRecipe() { window.print(); }
 
-// Share Recipe
+// ── Share ─────────────────────────────────────────────────────────────────────
 function shareRecipe(recipeName, recipeId) {
-    const url = window.location.origin + '/recipe/' + recipeId;
-    const text = `Check out this amazing recipe: ${recipeName}`;
-    
-    // Check if Web Share API is available
+    const url = `${location.origin}/recipe/${recipeId}`;
+    const text = `Check out this recipe: ${recipeName}`;
     if (navigator.share) {
-        navigator.share({
-            title: recipeName,
-            text: text,
-            url: url
-        }).catch(err => console.log('Error sharing:', err));
+        navigator.share({ title: recipeName, text, url }).catch(() => {});
     } else {
-        // Fallback: Show custom share modal
         showShareModal(recipeName, url, text);
     }
 }
 
 function showShareModal(recipeName, url, text) {
-    // Create modal if it doesn't exist
     let modal = document.getElementById('shareModal');
     if (!modal) {
         modal = document.createElement('div');
@@ -225,58 +246,37 @@ function showShareModal(recipeName, url, text) {
                 <span class="close" onclick="closeShareModal()">&times;</span>
                 <h3>Share Recipe</h3>
                 <div class="share-buttons">
-                    <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}" 
-                       target="_blank" class="share-btn share-btn-twitter">
-                        <span class="share-btn-icon">🐦</span>
-                        Share on Twitter
-                    </a>
-                    <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}" 
-                       target="_blank" class="share-btn share-btn-facebook">
-                        <span class="share-btn-icon">📘</span>
-                        Share on Facebook
-                    </a>
-                    <a href="https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}" 
-                       target="_blank" class="share-btn share-btn-whatsapp">
-                        <span class="share-btn-icon">💬</span>
-                        Share on WhatsApp
-                    </a>
-                    <button onclick="copyToClipboard('${url}')" class="share-btn share-btn-copy">
-                        <span class="share-btn-icon">📋</span>
-                        Copy Link
-                    </button>
+                    <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}"
+                       target="_blank" class="share-btn share-btn-twitter">🐦 Share on Twitter</a>
+                    <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}"
+                       target="_blank" class="share-btn share-btn-facebook">📘 Share on Facebook</a>
+                    <a href="https://wa.me/?text=${encodeURIComponent(text+' '+url)}"
+                       target="_blank" class="share-btn share-btn-whatsapp">💬 Share on WhatsApp</a>
+                    <button onclick="copyToClipboard('${url}')" class="share-btn share-btn-copy">📋 Copy Link</button>
                 </div>
-            </div>
-        `;
+            </div>`;
         document.body.appendChild(modal);
     }
     modal.style.display = 'block';
 }
 
 function closeShareModal() {
-    const modal = document.getElementById('shareModal');
-    if (modal) modal.style.display = 'none';
+    const m = document.getElementById('shareModal');
+    if (m) m.style.display = 'none';
 }
 
 function copyToClipboard(text) {
     navigator.clipboard.writeText(text).then(() => {
-        showNotification('Link copied to clipboard!', 'add');
+        showNotification('Link copied!', 'add');
         closeShareModal();
-    }).catch(err => {
-        console.error('Failed to copy:', err);
     });
 }
 
-// Close share modal when clicking outside
-window.addEventListener('click', function(event) {
-    const modal = document.getElementById('shareModal');
-    if (event.target == modal) {
-        closeShareModal();
-    }
+window.addEventListener('click', e => {
+    const sm = document.getElementById('shareModal');
+    if (e.target === sm) closeShareModal();
+    const pm = document.getElementById('plannerPickModal');
+    if (e.target === pm) pm.style.display = 'none';
 });
 
-// Initialize theme on page load
-document.addEventListener('DOMContentLoaded', function() {
-    loadTheme();
-});
-
-console.log('Recipe Finder loaded!');
+document.addEventListener('DOMContentLoaded', () => { loadTheme(); });

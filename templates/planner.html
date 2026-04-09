@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meal Planner - Recipe Finder</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍳</text></svg>">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="logo">recipe<span>.</span></a>
+            <ul class="nav-links">
+                <li><a href="/">Home</a></li>
+                <li><a href="/random">Random</a></li>
+                <li><a href="/planner">📅 Meal Planner</a></li>
+                <li><a href="#" onclick="showFavorites(); return false;">Favorites (<span id="favCount">0</span>)</a></li>
+                <li><a href="#" onclick="showFavorites(); return false;" class="nav-cta">My Saved Recipes</a></li>
+                <li><button class="theme-toggle" onclick="toggleTheme()"><span class="theme-icon">🌙</span></button></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="page-container">
+        <div class="page-header">
+            <h1>📅 Weekly Meal Planner</h1>
+            <p>Plan your meals for the week. Drag saved recipes into any slot.</p>
+        </div>
+
+        <div class="planner-actions">
+            <button class="btn btn-outline" onclick="clearPlanner()">🗑️ Clear All</button>
+            <button class="btn btn-outline" onclick="printPlanner()">🖨️ Print Plan</button>
+        </div>
+
+        <div class="planner-grid" id="plannerGrid"></div>
+
+        <div class="planner-favorites">
+            <h3>Your Saved Recipes</h3>
+            <p class="planner-hint">Click a recipe, then click a meal slot to add it.</p>
+            <div class="planner-fav-list" id="plannerFavList"></div>
+        </div>
+    </div>
+
+    <div id="favoritesModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeFavorites()">&times;</span>
+            <h2>My Saved Recipes</h2>
+            <div id="favoritesList" class="recipe-grid"></div>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+    <script>
+        const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+        const MEALS = ['Breakfast','Lunch','Dinner'];
+        let selectedRecipe = null;
+
+        function getPlan() {
+            return JSON.parse(localStorage.getItem('mealPlan') || '{}');
+        }
+        function savePlan(plan) {
+            localStorage.setItem('mealPlan', JSON.stringify(plan));
+        }
+
+        function renderPlanner() {
+            const plan = getPlan();
+            const grid = document.getElementById('plannerGrid');
+            grid.innerHTML = '';
+
+            // Header row
+            const header = document.createElement('div');
+            header.className = 'planner-header-row';
+            header.innerHTML = '<div class="planner-cell planner-corner"></div>' +
+                MEALS.map(m => `<div class="planner-cell planner-meal-header">${m}</div>`).join('');
+            grid.appendChild(header);
+
+            DAYS.forEach(day => {
+                const row = document.createElement('div');
+                row.className = 'planner-row';
+                row.innerHTML = `<div class="planner-cell planner-day-label">${day}</div>`;
+                MEALS.forEach(meal => {
+                    const key = `${day}_${meal}`;
+                    const recipe = plan[key];
+                    const cell = document.createElement('div');
+                    cell.className = 'planner-cell planner-slot' + (recipe ? ' filled' : '');
+                    cell.dataset.key = key;
+                    cell.onclick = () => handleSlotClick(key);
+                    if (recipe) {
+                        cell.innerHTML = `
+                            <img src="${recipe.image}" alt="${recipe.name}">
+                            <span class="planner-recipe-name">${recipe.name}</span>
+                            <button class="planner-remove" onclick="removeFromPlan(event,'${key}')">×</button>
+                        `;
+                    } else {
+                        cell.innerHTML = `<span class="planner-empty">+ Add</span>`;
+                    }
+                    row.appendChild(cell);
+                });
+                grid.appendChild(row);
+            });
+        }
+
+        function renderFavorites() {
+            const favs = getFavorites();
+            const list = document.getElementById('plannerFavList');
+            if (Object.keys(favs).length === 0) {
+                list.innerHTML = '<p style="color:var(--text-muted);font-size:0.9rem;">No saved recipes yet. Save some recipes first!</p>';
+                return;
+            }
+            list.innerHTML = Object.entries(favs).map(([id, r]) => `
+                <div class="planner-fav-card ${selectedRecipe && selectedRecipe.id === id ? 'selected' : ''}"
+                     onclick="selectRecipe('${id}', '${r.name.replace(/'/g,"\\'")}', '${r.image}')">
+                    <img src="${r.image}" alt="${r.name}">
+                    <span>${r.name}</span>
+                </div>
+            `).join('');
+        }
+
+        function selectRecipe(id, name, image) {
+            selectedRecipe = { id, name, image };
+            renderFavorites();
+            showNotification(`Selected: ${name} — now click a meal slot`, 'add');
+        }
+
+        function handleSlotClick(key) {
+            if (!selectedRecipe) {
+                showNotification('First select a recipe from below', 'remove');
+                return;
+            }
+            const plan = getPlan();
+            plan[key] = { name: selectedRecipe.name, image: selectedRecipe.image, id: selectedRecipe.id };
+            savePlan(plan);
+            selectedRecipe = null;
+            renderPlanner();
+            renderFavorites();
+        }
+
+        function removeFromPlan(e, key) {
+            e.stopPropagation();
+            const plan = getPlan();
+            delete plan[key];
+            savePlan(plan);
+            renderPlanner();
+        }
+
+        function clearPlanner() {
+            if (confirm('Clear the entire meal plan?')) {
+                localStorage.removeItem('mealPlan');
+                renderPlanner();
+            }
+        }
+
+        function printPlanner() { window.print(); }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTheme();
+            updateFavoriteCount();
+            renderPlanner();
+            renderFavorites();
+        });
+    </script>
+</body>
+</html>
