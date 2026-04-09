@@ -1513,3 +1513,86 @@ body.page-loaded { opacity: 1; }
   .planner-header-row,
   .planner-row { grid-template-columns: 80px repeat(3, 1fr); }
 }
+
+/* ── Fridge section OVERRIDE (theme-matched) ─────────────────────────────── */
+.fridge-section {
+  background: linear-gradient(135deg, rgba(255,237,213,0.5) 0%, rgba(99,102,241,0.04) 100%);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 100px 2rem;
+}
+
+.fridge-section .section-header h2 {
+  font-size: 2.2rem;
+}
+
+.fridge-form {
+  max-width: 780px;
+}
+
+.fridge-input-wrap {
+  display: flex;
+  gap: 0.6rem;
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.95);
+  border-radius: var(--radius-lg);
+  padding: 0.65rem;
+  box-shadow: var(--shadow-lg);
+  margin-bottom: 1.25rem;
+}
+
+.fridge-input-wrap input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: 'Inter', sans-serif;
+  font-size: 1.05rem;
+  color: var(--text-main);
+  padding: 1rem 1.25rem;
+}
+
+.fridge-input-wrap input::placeholder { color: #94a3b8; }
+
+.fridge-input-wrap button {
+  background: var(--primary-action);
+  color: white;
+  border: none;
+  padding: 1rem 2.25rem;
+  border-radius: var(--radius);
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.25s;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(99,102,241,0.3);
+}
+
+.fridge-input-wrap button:hover {
+  background: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(99,102,241,0.4);
+}
+
+.fridge-tags {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 0.25rem;
+}
+
+.fridge-tags span {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+@media (max-width: 600px) {
+  .fridge-input-wrap { flex-direction: column; }
+  .fridge-input-wrap button { width: 100%; }
+  .fridge-section { padding: 60px 1.5rem; }
+}
