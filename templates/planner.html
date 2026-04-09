@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -17,29 +17,64 @@
                 <li><a href="/planner">📅 Meal Planner</a></li>
                 <li><a href="#" onclick="showFavorites(); return false;">Favorites (<span id="favCount">0</span>)</a></li>
                 <li><a href="#" onclick="showFavorites(); return false;" class="nav-cta">My Saved Recipes</a></li>
-                <li><button class="theme-toggle" onclick="toggleTheme()"><span class="theme-icon">🌙</span></button></li>
+                <li><button class="theme-toggle" onclick="toggleTheme()"><span class="theme-icon">��</span></button></li>
             </ul>
         </div>
     </nav>
 
-    <div class="page-container">
-        <div class="page-header">
-            <h1>📅 Weekly Meal Planner</h1>
-            <p>Plan your meals for the week. Drag saved recipes into any slot.</p>
+    <!-- Planner Hero -->
+    <div class="planner-hero">
+        <div class="planner-hero-inner">
+            <div>
+                <div class="hero-eyebrow">📅 Weekly Planner</div>
+                <h1 class="planner-title">Plan your week,<br><span class="highlight">eat better every day</span></h1>
+                <p class="planner-subtitle">Select a recipe from your saved list, then click any meal slot to fill it in.</p>
+            </div>
+            <div class="planner-hero-stats">
+                <div class="planner-stat" id="statFilled">
+                    <span class="planner-stat-num" id="filledCount">0</span>
+                    <span class="planner-stat-label">Meals planned</span>
+                </div>
+                <div class="planner-stat">
+                    <span class="planner-stat-num">21</span>
+                    <span class="planner-stat-label">Total slots</span>
+                </div>
+                <div class="planner-stat">
+                    <span class="planner-stat-num" id="daysCount">0</span>
+                    <span class="planner-stat-label">Days covered</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="planner-page">
+
+        <!-- Action bar -->
+        <div class="planner-bar">
+            <div class="planner-bar-left">
+                <span class="planner-bar-label">Week of <strong id="weekLabel"></strong></span>
+            </div>
+            <div class="planner-bar-right">
+                <button class="btn btn-outline" onclick="clearPlanner()">🗑️ Clear All</button>
+                <button class="btn btn-outline" onclick="window.print()">🖨️ Print</button>
+            </div>
         </div>
 
-        <div class="planner-actions">
-            <button class="btn btn-outline" onclick="clearPlanner()">🗑️ Clear All</button>
-            <button class="btn btn-outline" onclick="printPlanner()">🖨️ Print Plan</button>
+        <!-- Day cards grid -->
+        <div class="planner-days" id="plannerDays"></div>
+
+        <!-- Saved recipes picker -->
+        <div class="planner-picker-section">
+            <div class="planner-picker-header">
+                <div>
+                    <h2>Your Saved Recipes</h2>
+                    <p>Click a recipe to select it, then click a meal slot above</p>
+                </div>
+                <a href="/" class="btn btn-outline" style="white-space:nowrap">+ Find More Recipes</a>
+            </div>
+            <div class="planner-picker-grid" id="plannerFavList"></div>
         </div>
 
-        <div class="planner-grid" id="plannerGrid"></div>
-
-        <div class="planner-favorites">
-            <h3>Your Saved Recipes</h3>
-            <p class="planner-hint">Click a recipe, then click a meal slot to add it.</p>
-            <div class="planner-fav-list" id="plannerFavList"></div>
-        </div>
     </div>
 
     <div id="favoritesModal" class="modal">
@@ -53,66 +88,99 @@
     <script src="/static/script.js"></script>
     <script>
         const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-        const MEALS = ['Breakfast','Lunch','Dinner'];
+        const DAY_SHORT = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+        const MEALS = [
+            { key: 'Breakfast', icon: '🌅', color: '#f59e0b' },
+            { key: 'Lunch',     icon: '☀️',  color: '#10b981' },
+            { key: 'Dinner',    icon: '🌙',  color: '#6366f1' }
+        ];
         let selectedRecipe = null;
 
-        function getPlan() {
-            return JSON.parse(localStorage.getItem('mealPlan') || '{}');
+        function getPlan() { return JSON.parse(localStorage.getItem('mealPlan') || '{}'); }
+        function savePlan(p) { localStorage.setItem('mealPlan', JSON.stringify(p)); }
+
+        function getWeekLabel() {
+            const now = new Date();
+            const mon = new Date(now);
+            mon.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+            const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+            const fmt = d => d.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+            return `${fmt(mon)} – ${fmt(sun)}`;
         }
-        function savePlan(plan) {
-            localStorage.setItem('mealPlan', JSON.stringify(plan));
+
+        function updateStats() {
+            const plan = getPlan();
+            const filled = Object.keys(plan).length;
+            const days = new Set(Object.keys(plan).map(k => k.split('_')[0])).size;
+            document.getElementById('filledCount').textContent = filled;
+            document.getElementById('daysCount').textContent = days;
         }
 
         function renderPlanner() {
             const plan = getPlan();
-            const grid = document.getElementById('plannerGrid');
-            grid.innerHTML = '';
+            const container = document.getElementById('plannerDays');
+            container.innerHTML = '';
 
-            // Header row
-            const header = document.createElement('div');
-            header.className = 'planner-header-row';
-            header.innerHTML = '<div class="planner-cell planner-corner"></div>' +
-                MEALS.map(m => `<div class="planner-cell planner-meal-header">${m}</div>`).join('');
-            grid.appendChild(header);
+            DAYS.forEach((day, di) => {
+                const card = document.createElement('div');
+                card.className = 'planner-day-card';
 
-            DAYS.forEach(day => {
-                const row = document.createElement('div');
-                row.className = 'planner-row';
-                row.innerHTML = `<div class="planner-cell planner-day-label">${day}</div>`;
-                MEALS.forEach(meal => {
-                    const key = `${day}_${meal}`;
-                    const recipe = plan[key];
-                    const cell = document.createElement('div');
-                    cell.className = 'planner-cell planner-slot' + (recipe ? ' filled' : '');
-                    cell.dataset.key = key;
-                    cell.onclick = () => handleSlotClick(key);
-                    if (recipe) {
-                        cell.innerHTML = `
-                            <img src="${recipe.image}" alt="${recipe.name}">
-                            <span class="planner-recipe-name">${recipe.name}</span>
-                            <button class="planner-remove" onclick="removeFromPlan(event,'${key}')">×</button>
-                        `;
-                    } else {
-                        cell.innerHTML = `<span class="planner-empty">+ Add</span>`;
-                    }
-                    row.appendChild(cell);
-                });
-                grid.appendChild(row);
+                const isToday = new Date().toLocaleDateString('en-GB', {weekday:'long'}) === day;
+                card.innerHTML = `
+                    <div class="planner-day-header ${isToday ? 'today' : ''}">
+                        <span class="planner-day-name">${DAY_SHORT[di]}</span>
+                        ${isToday ? '<span class="today-badge">Today</span>' : ''}
+                    </div>
+                    <div class="planner-meals">
+                        ${MEALS.map(meal => {
+                            const key = `${day}_${meal.key}`;
+                            const recipe = plan[key];
+                            if (recipe) {
+                                return `
+                                <div class="planner-meal-slot filled" data-key="${key}" onclick="handleSlotClick('${key}')">
+                                    <div class="meal-slot-label" style="color:${meal.color}">${meal.icon} ${meal.key}</div>
+                                    <img src="${recipe.image}" alt="${recipe.name}">
+                                    <span class="meal-slot-name">${recipe.name}</span>
+                                    <button class="planner-remove" onclick="removeFromPlan(event,'${key}')">×</button>
+                                </div>`;
+                            } else {
+                                return `
+                                <div class="planner-meal-slot empty" data-key="${key}" onclick="handleSlotClick('${key}')">
+                                    <div class="meal-slot-label" style="color:${meal.color}">${meal.icon} ${meal.key}</div>
+                                    <div class="meal-slot-add">
+                                        <span class="meal-slot-plus">+</span>
+                                        <span>Add meal</span>
+                                    </div>
+                                </div>`;
+                            }
+                        }).join('')}
+                    </div>
+                `;
+                container.appendChild(card);
             });
+            updateStats();
         }
 
         function renderFavorites() {
             const favs = getFavorites();
             const list = document.getElementById('plannerFavList');
             if (Object.keys(favs).length === 0) {
-                list.innerHTML = '<p style="color:var(--text-muted);font-size:0.9rem;">No saved recipes yet. Save some recipes first!</p>';
+                list.innerHTML = `
+                    <div class="planner-empty-favs">
+                        <span>��️</span>
+                        <p>No saved recipes yet.</p>
+                        <a href="/" class="btn btn-primary" style="margin-top:1rem;">Browse Recipes</a>
+                    </div>`;
                 return;
             }
             list.innerHTML = Object.entries(favs).map(([id, r]) => `
-                <div class="planner-fav-card ${selectedRecipe && selectedRecipe.id === id ? 'selected' : ''}"
-                     onclick="selectRecipe('${id}', '${r.name.replace(/'/g,"\\'")}', '${r.image}')">
-                    <img src="${r.image}" alt="${r.name}">
-                    <span>${r.name}</span>
+                <div class="planner-pick-card ${selectedRecipe && selectedRecipe.id === id ? 'selected' : ''}"
+                     onclick="selectRecipe('${id}','${r.name.replace(/'/g,"\\'").replace(/"/g,'&quot;')}','${r.image}')">
+                    <div class="planner-pick-img-wrap">
+                        <img src="${r.image}" alt="${r.name}" loading="lazy">
+                        ${selectedRecipe && selectedRecipe.id === id ? '<div class="pick-selected-overlay">✓ Selected</div>' : ''}
+                    </div>
+                    <span class="planner-pick-name">${r.name}</span>
                 </div>
             `).join('');
         }
@@ -120,12 +188,14 @@
         function selectRecipe(id, name, image) {
             selectedRecipe = { id, name, image };
             renderFavorites();
-            showNotification(`Selected: ${name} — now click a meal slot`, 'add');
+            showNotification(`"${name}" selected — click a meal slot`, 'add');
         }
 
         function handleSlotClick(key) {
             if (!selectedRecipe) {
-                showNotification('First select a recipe from below', 'remove');
+                showNotification('Select a recipe from below first', 'remove');
+                // Scroll to picker
+                document.getElementById('plannerFavList').scrollIntoView({ behavior: 'smooth', block: 'center' });
                 return;
             }
             const plan = getPlan();
@@ -134,6 +204,7 @@
             selectedRecipe = null;
             renderPlanner();
             renderFavorites();
+            showNotification('Added to meal plan!', 'add');
         }
 
         function removeFromPlan(e, key) {
@@ -148,14 +219,14 @@
             if (confirm('Clear the entire meal plan?')) {
                 localStorage.removeItem('mealPlan');
                 renderPlanner();
+                showNotification('Meal plan cleared', 'remove');
             }
         }
-
-        function printPlanner() { window.print(); }
 
         document.addEventListener('DOMContentLoaded', () => {
             loadTheme();
             updateFavoriteCount();
+            document.getElementById('weekLabel').textContent = getWeekLabel();
             renderPlanner();
             renderFavorites();
         });
